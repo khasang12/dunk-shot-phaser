@@ -9,7 +9,8 @@
     "bundle": "npm run build",
     "preview": "serve dist",
     "util:check": "prettier --check src/scripts/**",
-    "util:format": "prettier --write src/scripts/**"
+    "util:format": "prettier --write src/scripts/**",
+    "deploy": "gh-pages -d dist"
   },
   "alias": {
     "@/": "./src"
@@ -52,6 +53,7 @@
     "workbox-webpack-plugin": "^6.4.2"
   },
   "dependencies": {
+    "gh-pages": "^5.0.0",
     "phaser": "^3.60.0"
   }
 }

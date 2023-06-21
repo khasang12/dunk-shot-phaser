@@ -26,6 +26,9 @@
 
     <link rel="shortcut icon" href="./favicon.ico" type="image/x-icon" />
 
+    <link rel="stylesheet" href="./assets/fonts/myfont.css">
+
+
     <title><%= htmlWebpackPlugin.options.gameName %></title>
     <style>
       html,
@@ -34,20 +37,18 @@
         margin: 0;
         background-color: #000000;
       }
+      @font-face {
+        font-family: MilkyHoney;
+        src: url('./assets/fonts/MilkyHoney.ttf');
+        font-weight:400;
+        font-weight:normal;
+      }
     </style>
 
     <noscript>Please enable javascript to continue using this application.</noscript>
-
-    <!-- installs the serviceWorker -->
-    <!-- <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js')
-        })
-      }
-    </script> -->
   </head>
   <body>
+    <div style="font-family:MilkyHoney; position:absolute; left:-1000px; visibility:hidden;">.</div>
     <div id="game"></div>
   </body>
 </html>
