@@ -70,7 +70,7 @@ export default class PreloadScene extends Phaser.Scene {
     }
 
     private preloadButtons(): void {
-        this.load.setPath('../../assets/images/buttons/')
+        this.load.setPath('assets/images/buttons/')
         this.load.image('close', 'Close.png')
         this.load.image('close', 'Divide.png')
         this.load.image('close', 'Facebook.png')
@@ -108,7 +108,7 @@ export default class PreloadScene extends Phaser.Scene {
     }
 
     private preloadBalls(): void {
-        this.load.setPath('../../assets/images/colorful-balls/')
+        this.load.setPath('assets/images/colorful-balls/')
         this.load.image('ball_1', '1.png')
         this.load.image('ball_2', '2.png')
         this.load.image('ball_3', '3.png')
@@ -125,7 +125,7 @@ export default class PreloadScene extends Phaser.Scene {
     }
 
     private preloadSprites(): void {
-        this.load.setPath('../../assets/images/sprites/')
+        this.load.setPath('assets/images/sprites/')
         this.load.image('dot', 'Dot_0.png')
         this.load.image('ball', 'ball.png')
         this.load.image('hoop-down', 'hoop_1.png')
@@ -137,7 +137,7 @@ export default class PreloadScene extends Phaser.Scene {
     }
 
     private preloadThemes(): void {
-        this.load.setPath('../../assets/images/theme-game-mode/')
+        this.load.setPath('assets/images/theme-game-mode/')
         this.load.image('bg_0', '0/bg_0.png')
         this.load.image('bg_1', '1/bg_1.png')
         this.load.image('bg_2', '2/bg_2.png')
@@ -151,7 +151,7 @@ export default class PreloadScene extends Phaser.Scene {
     }
 
     private preloadAudio(): void {
-        this.load.setPath('../../assets/audio/')
+        this.load.setPath('assets/audio/')
         this.load.audio('bounce', 'Bounce.wav')
         this.load.audio('click', 'Click.wav')
         this.load.audio('game-over', 'GameOver.wav')

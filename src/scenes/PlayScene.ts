@@ -4,6 +4,7 @@ import Basket from '../objects/game-objects/Basket'
 import ClickableImage from '../objects/images/ClickableImage'
 import Image from '../objects/images/Image'
 import { Text } from '../objects/texts/Text'
+import { Sound } from '../types/sound'
 
 export default class PlayScene extends Phaser.Scene {
     private background: Phaser.GameObjects.TileSprite
@@ -13,6 +14,8 @@ export default class PlayScene extends Phaser.Scene {
     private score: number
     private curScoreText: Text
     private scrollSpeed: number
+    private netAudio: Sound
+    private bounceAudio: Sound
 
     constructor() {
         super({ key: 'PlayScene' })
@@ -24,6 +27,9 @@ export default class PlayScene extends Phaser.Scene {
     }
 
     create() {
+        this.netAudio = this.sound.add('net')
+        this.bounceAudio = this.sound.add('bounce')
+
         const pauseImg = new ClickableImage({
             scene: this,
             x: 80,
@@ -56,7 +62,7 @@ export default class PlayScene extends Phaser.Scene {
         this.curBasket = new Basket({
             scene: this,
             x: 130,
-            y: CANVAS_HEIGHT/2 + 200,
+            y: CANVAS_HEIGHT / 2 + 200,
             key: 'basket',
             callback: (x: number, y: number, angle: number, speed: number) => {
                 this.ball.fly(x, y, angle, speed)
@@ -89,6 +95,9 @@ export default class PlayScene extends Phaser.Scene {
     }
 
     public update() {
+        this.physics.world.on('worldbounds', () => {
+            if (this.ball.body?.touching.up) console.log('You lose !!!')
+        })
         // Ball goes back to current basket
         if (
             this.physics.overlap(this.ball, this.curBasket) &&
@@ -97,6 +106,7 @@ export default class PlayScene extends Phaser.Scene {
         ) {
             this.curBasket.reset()
             this.ball.resetPosition(this.curBasket.x, this.curBasket.y)
+            this.netAudio.play()
         }
         // Ball hits the next basket
         if (

@@ -56,22 +56,22 @@ export default class StartScene extends Phaser.Scene {
             y: CANVAS_HEIGHT - 200,
             key: 'basket',
             scale: 0.5 * 1.5,
-        })
+        }).setDepth(2)
         const basket2Img = new Image({
             scene: this,
             x: CANVAS_WIDTH - 140,
             y: CANVAS_HEIGHT / 2 + 30,
             key: 'basket',
             scale: 0.5 * 1.5,
-        })
+        }).setDepth(2)
 
         this.ball = new Ball({
             scene: this,
             x: 110,
             y: CANVAS_HEIGHT - 180,
             key: 'ball',
-            scale: 0.14 * 1.5,
-        })
+            scale: 0.2,
+        }).setDepth(1)
 
         const dragBtn = new ClickableImage({
             scene: this,
