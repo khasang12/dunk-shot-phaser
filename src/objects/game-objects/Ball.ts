@@ -11,18 +11,16 @@ export default class Ball extends BodyObject {
         this.elapsed = 0
         this.isMoving = false
 
-        this.body?.setCircle(this.width / 2)
-
+        
         this.scene.physics.add.existing(this)
-
+        
         this.disableBody(true, true)
-
+        
         this.setVisible(true)
-
+        
         this.setCollideWorldBounds(true, 1, 0, true)
-        this.setGravityY(200)
-        this.setMass(5)
-
+        
+        this.body?.setCircle(this.width / 2)
         this.scene.add.existing(this)
     }
 

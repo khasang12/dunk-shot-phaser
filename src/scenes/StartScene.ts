@@ -13,12 +13,16 @@ export default class StartScene extends Phaser.Scene {
     }
 
     public create() {
+        this.cameras.main.fadeIn(500, 0, 0, 0)
+
         const settingsImg = new ClickableImage({
             scene: this,
             x: 50,
             y: 50,
             key: 'settings',
-            callback: this.getFreeGift,
+            callback: () => {
+                this.scene.start('SettingScene', { data: 'StartScene' })
+            },
             scale: 0.2 * 1.5,
         })
         const trophyImg = new ClickableImage({
@@ -40,8 +44,13 @@ export default class StartScene extends Phaser.Scene {
             scene: this,
             x: CANVAS_WIDTH - 40,
             y: 50,
-            msg: '0',
-            style: { fontSize: '45px', color: 'black', strokeThickness: 3 },
+            msg: localStorage.getItem('star') || '0',
+            style: {
+                fontFamily: 'MilkyHoney',
+                fontSize: '45px',
+                color: 'black',
+                strokeThickness: 3,
+            },
         })
         const logoImg = new Image({
             scene: this,
