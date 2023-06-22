@@ -6,8 +6,6 @@ import Ball from './Ball'
 import BodyObject from './BodyObject'
 import Star from './Star'
 
-let lock = true
-
 export default class Basket extends BodyObject {
     private trajectory: Point[]
     private points: Phaser.GameObjects.Graphics
@@ -22,10 +20,7 @@ export default class Basket extends BodyObject {
         // Enable input events for the image
         this.setInteractive()
 
-        // Add event listeners for the image click/touch events
-        this.on('pointerdown', this.onPointerDown, this)
-        this.on('pointermove', this.onPointerMove, this)
-        this.on('pointerup', this.onPointerUp, this)
+        
 
         if (o.callback) this.callback = o.callback
 
@@ -34,58 +29,6 @@ export default class Basket extends BodyObject {
         this.shootAudio = this.scene.sound.add('shoot')
 
         this.scene.add.existing(this)
-    }
-
-    public onPointerDown(pointer: Phaser.Input.Pointer) {
-        //this.dragStart = { x: pointer.x, y: pointer.y }
-        const distance = Phaser.Math.Distance.Between(this.x, this.y, pointer.x, pointer.y)
-        // if the pointer is within a certain distance from the bird
-        if (distance < 50) {
-            // set the bird to be dragged
-            this.dragStart = true
-        }
-    }
-
-    public onPointerUp(pointer: Phaser.Input.Pointer) {
-        if (this.dragStart) {
-            // calculate the angle between the bird and the pointer
-            const angle = Phaser.Math.Angle.Between(this.x, this.y, pointer.x, pointer.y)
-
-            // apply velocity to the this based on the angle and distance
-            const distance = Phaser.Math.Distance.Between(this.x, this.y, pointer.x, pointer.y)
-            const velocity = distance
-
-            // set the this to not be dragged anymore
-            this.setScale(this.scaleX, this.scaleX)
-            this.callback(this.x, this.y, -angle, velocity)
-            this.dragStart = false
-            this.shootAudio.play()
-        }
-    }
-
-    public onPointerMove(pointer: Phaser.Input.Pointer) {
-        // Mutex Lock
-        if (lock) {
-            lock = false
-
-            if (pointer.isDown) {
-                // calculate the angle between the bird and the pointer
-                const angle = Phaser.Math.Angle.Between(this.x, this.y, pointer.x, pointer.y)
-
-                // Set the object's rotation to the calculated angle
-                this.rotation = angle + Math.PI / 2
-
-                // Calculate the distance and angle between the starting position of the drag and the current pointer position
-                const distance = Phaser.Math.Distance.Between(this.x, this.y, pointer.x, pointer.y)
-                this.setTrajectory(Math.max(50, distance * 50), -angle)
-
-                this.setScale(this.scaleX, Math.min(this.scaleY * 1.2, 0.8))
-            }
-
-            setTimeout(function () {
-                lock = true
-            }, 300) // wait for 300ms before allowing another request
-        }
     }
 
     public setTrajectory(power: number, angle: number) {
