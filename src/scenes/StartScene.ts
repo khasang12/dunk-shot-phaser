@@ -61,12 +61,15 @@ export default class StartScene extends Phaser.Scene {
             key: 'logo',
             scale: 0.32 * 1.5,
         })
-        const basket1Img = new Image({
+        const basket1Img = new ClickableImage({
             scene: this,
             x: 110,
             y: CANVAS_HEIGHT - 200,
             key: 'basket',
             scale: 0.5 * 1.5,
+            callback: () => {
+                this.scene.start('PlayScene')
+            },
         }).setDepth(2)
         const basket2Img = new Image({
             scene: this,

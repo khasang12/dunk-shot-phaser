@@ -87,7 +87,7 @@ export default class Ball extends BodyObject {
         this.points = this.scene.add.graphics()
         this.points.fillStyle(0xffa500, 1)
         for (let i = 0; i < 6; i++) {
-            const timeSlice = i / 1.5
+            const timeSlice = i
             const x = this.x + power * Math.cos(angle) * timeSlice
             const y = this.y - power * Math.sin(angle) * timeSlice + 0.5 * 9.8 * timeSlice ** 2
             this.trajectory.push({ x, y })

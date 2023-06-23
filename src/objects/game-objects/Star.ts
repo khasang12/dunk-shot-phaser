@@ -11,5 +11,15 @@ export default class Star extends BodyObject {
         this.disableBody(true, true)
         this.setVisible(true)
         this.scene.add.existing(this)
+
+        const fx1 = this.postFX.addGlow(0xffffff, 0, 0, false, 0.1, 24)
+
+        this.scene.tweens.add({
+            targets: fx1,
+            outerStrength: 7,
+            yoyo: true,
+            loop: -1,
+            ease: 'sine.inout',
+        })
     }
 }

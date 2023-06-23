@@ -33,6 +33,7 @@ export default class Basket extends BodyObject {
         this.bodyGroup.add(rect2)
         this.bodyGroup.add(rect3)
         this.bodyGroup.setActive(false)
+
         this.setInteractive({ hitArea: this.bodyGroup })
     }
 

@@ -103,7 +103,7 @@ export default class PlayScene extends Phaser.Scene {
                 pointer.x,
                 pointer.y
             )
-            const velocity = distance / 3
+            const velocity = distance / 5
 
             // set the this to not be dragged anymore
             this.curBasket.setScale(this.curBasket.scaleX, this.curBasket.scaleX)
@@ -137,7 +137,7 @@ export default class PlayScene extends Phaser.Scene {
                     pointer.x,
                     pointer.y
                 )
-                this.ball.setTrajectory(distance / 3, Math.PI / 2 - this.curBasket.rotation)
+                this.ball.setTrajectory(distance / 5, Math.PI / 2 - this.curBasket.rotation)
 
                 this.curBasket.setScale(
                     this.curBasket.scaleX,
