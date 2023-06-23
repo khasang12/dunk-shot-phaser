@@ -12,6 +12,7 @@ export const config = {
     type: Phaser.AUTO,
     parent: 'game',
     transparent: true,
+    canvasStyle: 'border: 2px solid black; box-shadow: 0 0 10px rgba(0, 0, 0, 0.5)',
     scale: {
         parent: 'phaser-game',
         mode: Phaser.Scale.FIT,
@@ -23,8 +24,8 @@ export const config = {
     physics: {
         default: 'arcade',
         arcade: {
-            debug: true,
-            gravity: { y: 400 },
+            debug: false,
+            gravity: { y: 980 },
         },
     },
 }

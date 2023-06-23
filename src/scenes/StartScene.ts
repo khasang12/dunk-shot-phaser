@@ -30,7 +30,9 @@ export default class StartScene extends Phaser.Scene {
             x: 160,
             y: 50,
             key: 'leaderboard',
-            callback: this.getFreeGift,
+            callback: () => {
+                console.log('leaderboard')
+            },
             scale: 0.24 * 1.5,
         })
         const starImg = new Image({
@@ -102,7 +104,9 @@ export default class StartScene extends Phaser.Scene {
             key: 'free-gift',
             text: 'FREE GIFT!',
             scale: 0.3 * 1.5,
-            callback: this.getFreeGift,
+            callback: () => {
+                console.log('free gift')
+            },
         })
 
         const customizeBtn = new Button({
@@ -112,7 +116,9 @@ export default class StartScene extends Phaser.Scene {
             key: 'customize',
             text: '',
             scale: 0.2 * 1.5,
-            callback: this.getFreeGift,
+            callback: () => {
+                console.log('customize')
+            },
         })
 
         const challengeBtn = new Button({
@@ -122,15 +128,13 @@ export default class StartScene extends Phaser.Scene {
             key: 'challenge',
             text: '',
             scale: 0.3 * 1.5,
-            callback: this.getFreeGift,
+            callback: () => {
+                console.log('challenge')
+            },
         })
     }
 
-    public update() {
-        this.ball.flyDemo()
-    }
-
-    public getFreeGift() {
-        console.log('free gift!!')
+    public update(time: number, delta: number) {
+        this.ball.flyDemo(time, delta)
     }
 }

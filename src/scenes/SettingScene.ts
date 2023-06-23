@@ -1,5 +1,4 @@
 import { CANVAS_HEIGHT, CANVAS_WIDTH, DARK_BG, LIGHT_BG } from '../constants'
-import { config } from '../game'
 import ClickableImage from '../objects/images/ClickableImage'
 import Image from '../objects/images/Image'
 import { Text } from '../objects/texts/Text'

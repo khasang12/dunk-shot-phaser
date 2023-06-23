@@ -8,10 +8,6 @@ export default class PauseScene extends Phaser.Scene {
         super({ key: 'PauseScene' })
     }
 
-    preload() {
-        return
-    }
-
     create() {
         const settingsImg = new ClickableImage({
             scene: this,
@@ -64,7 +60,9 @@ export default class PauseScene extends Phaser.Scene {
             x: CANVAS_WIDTH / 2,
             y: CANVAS_HEIGHT / 2 - 50,
             key: 'customize',
-            callback: () => {},
+            callback: () => {
+                console.log('Customize')
+            },
             scale: 0.32,
         })
         const leaderboardImg = new ClickableImage({
@@ -72,7 +70,9 @@ export default class PauseScene extends Phaser.Scene {
             x: CANVAS_WIDTH / 2,
             y: CANVAS_HEIGHT / 2 + 50,
             key: 'leader-board',
-            callback: () => {},
+            callback: () => {
+                console.log('Leaderboard')
+            },
             scale: 0.32,
         })
         const resumeImg = new ClickableImage({
