@@ -21,7 +21,6 @@ export default class PreloadScene extends Phaser.Scene {
 
     public create() {
         this.scene.start('StartScene')
-        //this.scene.start('PlayScene')
     }
 
     private showProgress(): void {
@@ -33,14 +32,14 @@ export default class PreloadScene extends Phaser.Scene {
         const progressText = this.add.text(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 15, '0%', {
             fontFamily: 'MilkyHoney',
             fontSize: '40px',
-            color: '#000',
+            color: '#ababab',
         })
         progressText.setOrigin()
 
         const progressFileText = this.add.text(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 20, '0%', {
             fontFamily: 'MilkyHoney',
             fontSize: '25px',
-            color: '#000',
+            color: '#ababab',
         })
         progressFileText.setOrigin()
 
@@ -70,7 +69,7 @@ export default class PreloadScene extends Phaser.Scene {
     }
 
     private preloadButtons(): void {
-        this.load.setPath('../../assets/images/buttons/')
+        this.load.setPath('assets/images/buttons/')
         this.load.image('close', 'Close.png')
         this.load.image('close', 'Divide.png')
         this.load.image('close', 'Facebook.png')
@@ -81,10 +80,14 @@ export default class PreloadScene extends Phaser.Scene {
         this.load.image('heart', 'Heart.png')
         this.load.image('home', 'Home.png')
         this.load.image('ig', 'Instagram.png')
+        this.load.image('ad', 'ad.png')
+        this.load.image('return', 'return.png')
         this.load.image('trophy', 'Trophy.png')
         this.load.image('trash', 'Trash.png')
-        this.load.image('sound-on', 'SoundOn.png')
-        this.load.image('sound-off', 'SoundOff.png')
+        this.load.image('sound-on', 'sound-on.png')
+        this.load.image('sound-off', 'sound-off.png')
+        this.load.image('light-on', 'light-on.png')
+        this.load.image('light-off', 'light-off.png')
         this.load.image('shop', 'Shop.png')
         this.load.image('share', 'Share.png')
         this.load.image('settings', 'Settings.png')
@@ -105,10 +108,13 @@ export default class PreloadScene extends Phaser.Scene {
         this.load.image('customize', 'customize.png')
         this.load.image('challenge', 'challenge.png')
         this.load.image('leaderboard', 'Leaderboard.png')
+        this.load.image('leader-board', 'leader-board.png')
+        this.load.image('main-menu', 'mainmenu.png')
+        this.load.image('resume', 'resume.png')
     }
 
     private preloadBalls(): void {
-        this.load.setPath('../../assets/images/colorful-balls/')
+        this.load.setPath('assets/images/colorful-balls/')
         this.load.image('ball_1', '1.png')
         this.load.image('ball_2', '2.png')
         this.load.image('ball_3', '3.png')
@@ -125,7 +131,7 @@ export default class PreloadScene extends Phaser.Scene {
     }
 
     private preloadSprites(): void {
-        this.load.setPath('../../assets/images/sprites/')
+        this.load.setPath('assets/images/sprites/')
         this.load.image('dot', 'Dot_0.png')
         this.load.image('ball', 'ball.png')
         this.load.image('hoop-down', 'hoop_1.png')
@@ -137,10 +143,13 @@ export default class PreloadScene extends Phaser.Scene {
     }
 
     private preloadThemes(): void {
-        this.load.setPath('../../assets/images/theme-game-mode/')
+        this.load.setPath('assets/images/theme-game-mode/')
         this.load.image('bg_0', '0/bg_0.png')
         this.load.image('bg_1', '1/bg_1.png')
         this.load.image('bg_2', '2/bg_2.png')
+        this.load.image('wall_0', '0/wall_0.png')
+        this.load.image('wall_1', '1/wall_1.png')
+        this.load.image('wall_2', '2/wall_2.png')
         this.load.image('theme_0', '0.png')
         this.load.image('theme_1', '1.png')
         this.load.image('theme_2', '2.png')
@@ -151,7 +160,7 @@ export default class PreloadScene extends Phaser.Scene {
     }
 
     private preloadAudio(): void {
-        this.load.setPath('../../assets/audio/')
+        this.load.setPath('assets/audio/')
         this.load.audio('bounce', 'Bounce.wav')
         this.load.audio('click', 'Click.wav')
         this.load.audio('game-over', 'GameOver.wav')

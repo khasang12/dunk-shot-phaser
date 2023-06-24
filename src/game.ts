@@ -5,12 +5,15 @@ import PlayScene from './scenes/PlayScene'
 import PauseScene from './scenes/PauseScene'
 import GameOverScene from './scenes/GameOverScene'
 import { CANVAS_HEIGHT, CANVAS_WIDTH } from './constants'
+import SettingScene from './scenes/SettingScene'
+import CustomizeScene from './scenes/CustomizeScene'
 
 
-
-const config = {
+export const config = {
     type: Phaser.AUTO,
-    backgroundColor: '#dedede',
+    parent: 'game',
+    transparent: true,
+    canvasStyle: 'border: 2px solid black; box-shadow: 0 0 10px rgba(255, 165, 0, 0.5)',
     scale: {
         parent: 'phaser-game',
         mode: Phaser.Scale.FIT,
@@ -18,12 +21,12 @@ const config = {
         width: CANVAS_WIDTH,
         height: CANVAS_HEIGHT,
     },
-    scene: [PreloadScene, StartScene, PlayScene, PauseScene, GameOverScene],
+    scene: [PreloadScene, StartScene, PlayScene, PauseScene, GameOverScene, SettingScene, CustomizeScene],
     physics: {
         default: 'arcade',
         arcade: {
             debug: false,
-            gravity: { y: 400 },
+            gravity: { y: 980 },
         },
     },
 }

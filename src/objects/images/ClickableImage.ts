@@ -2,7 +2,7 @@ import { IClickableImage } from '../../types/image'
 import Image from './Image'
 
 export default class ClickableImage extends Image {
-    private callback: () => void
+    protected callback: () => void
 
     constructor(i: IClickableImage) {
         super(i)
