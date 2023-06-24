@@ -1,13 +1,11 @@
 import { CANVAS_HEIGHT, CANVAS_WIDTH } from '../../constants'
 import { IGameObject } from '../../types/object'
-import { Point } from '../../types/point'
 import BodyObject from './BodyObject'
 
 export default class Ball extends BodyObject {
     private elapsed: number
     private isMoving: boolean
-    private trajectory: Point[]
-    private points: Phaser.GameObjects.Graphics
+    
 
     constructor(o: IGameObject) {
         super(o)
@@ -20,6 +18,7 @@ export default class Ball extends BodyObject {
         this.body?.setCircle(this.width / 2)
         this.setBounce(1, 1)
         this.setVisible(true)
+        this.setGravityY(9.8)
         this.setCollideWorldBounds(false, 1, 1, true)
 
         this.scene.add.existing(this)
@@ -61,11 +60,9 @@ export default class Ball extends BodyObject {
     public fly(x: number, y: number, angle: number, speed: number) {
         if (speed > 0) {
             this.isMoving = true
-            this.rotation += 0.5
-            const curSpeed = Math.max(50, speed * 20)
+            const curSpeed = speed*7.2
             this.enableBody(true, x, y, true, true)
             this.setVelocity(curSpeed * Math.cos(angle), -curSpeed * Math.sin(angle))
-            console.log(angle, curSpeed)
             this.scene.physics.velocityFromRotation(-angle, curSpeed, this.body?.velocity)
         }
     }
@@ -82,34 +79,7 @@ export default class Ball extends BodyObject {
         this.disableBody(true, false)
     }
 
-    public setTrajectory(power: number, angle: number) {
-        this.trajectory = []
-        this.points = this.scene.add.graphics()
-        this.points.fillStyle(0xffa500, 1)
-        for (let i = 0; i < 6; i++) {
-            const timeSlice = i
-            const x = this.x + power * Math.cos(angle) * timeSlice
-            const y = this.y - power * Math.sin(angle) * timeSlice + 0.5 * 9.8 * timeSlice ** 2
-            this.trajectory.push({ x, y })
-        }
-        // Loop through each point in the trajectory and draw a circle at that position
-        for (let i = 0; i < 6; i++) {
-            const point = this.trajectory[i]
-            this.points.fillCircle(point.x, point.y, 10)
-        }
-
-        const tween = this.scene.tweens.add({
-            targets: this.points,
-            alpha: 0,
-            duration: 280,
-        })
-
-        tween.setCallback(
-            'onComplete',
-            function () {
-                tween.destroy()
-            },
-            []
-        )
-    }
+    public changeSkin(key: string){
+        this.setTexture(key)
+    }    
 }

@@ -4,6 +4,11 @@ import Button from '../objects/buttons/Button'
 import ClickableImage from '../objects/images/ClickableImage'
 import Image from '../objects/images/Image'
 import { Text } from '../objects/texts/Text'
+import BasketClickableImage from '../objects/images/BasketClickableImage'
+
+type SceneParam = {
+    skin: string
+}
 
 export default class StartScene extends Phaser.Scene {
     private ball: Ball
@@ -12,7 +17,7 @@ export default class StartScene extends Phaser.Scene {
         super({ key: 'StartScene' })
     }
 
-    public create() {
+    public create(data: SceneParam) {
         this.cameras.main.fadeIn(500, 0, 0, 0)
 
         const settingsImg = new ClickableImage({
@@ -61,14 +66,15 @@ export default class StartScene extends Phaser.Scene {
             key: 'logo',
             scale: 0.32 * 1.5,
         })
-        const basket1Img = new ClickableImage({
+        const basket1Img = new BasketClickableImage({
             scene: this,
             x: 110,
             y: CANVAS_HEIGHT - 200,
             key: 'basket',
             scale: 0.5 * 1.5,
             callback: () => {
-                this.scene.start('PlayScene')
+                if (data.skin) this.scene.start('PlayScene', data)
+                else this.scene.start('PlayScene', { skin: 'ball' })
             },
         }).setDepth(2)
         const basket2Img = new Image({
@@ -86,6 +92,8 @@ export default class StartScene extends Phaser.Scene {
             key: 'ball',
             scale: 0.2,
         }).setDepth(1)
+        if (data.skin) this.ball.setTexture(data.skin)
+        else this.ball.setTexture('ball')
 
         const dragBtn = new ClickableImage({
             scene: this,
@@ -93,8 +101,8 @@ export default class StartScene extends Phaser.Scene {
             y: CANVAS_HEIGHT - 90,
             key: 'drag-it',
             callback: () => {
-                // Switch to the game scene
-                this.scene.start('PlayScene')
+                if (data.skin) this.scene.start('PlayScene', data)
+                else this.scene.start('PlayScene', { skin: 'ball' })
             },
             scale: 0.3 * 1.5,
         })
@@ -120,7 +128,7 @@ export default class StartScene extends Phaser.Scene {
             text: '',
             scale: 0.2 * 1.5,
             callback: () => {
-                console.log('customize')
+                this.scene.start('CustomizeScene')
             },
         })
 

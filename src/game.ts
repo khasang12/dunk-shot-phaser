@@ -6,6 +6,7 @@ import PauseScene from './scenes/PauseScene'
 import GameOverScene from './scenes/GameOverScene'
 import { CANVAS_HEIGHT, CANVAS_WIDTH } from './constants'
 import SettingScene from './scenes/SettingScene'
+import CustomizeScene from './scenes/CustomizeScene'
 
 
 export const config = {
@@ -20,7 +21,7 @@ export const config = {
         width: CANVAS_WIDTH,
         height: CANVAS_HEIGHT,
     },
-    scene: [PreloadScene, StartScene, PlayScene, PauseScene, GameOverScene, SettingScene],
+    scene: [PreloadScene, StartScene, PlayScene, PauseScene, GameOverScene, SettingScene, CustomizeScene],
     physics: {
         default: 'arcade',
         arcade: {

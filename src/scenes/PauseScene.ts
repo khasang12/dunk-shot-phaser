@@ -55,20 +55,10 @@ export default class PauseScene extends Phaser.Scene {
             },
             scale: 0.32,
         })
-        const customizeImg = new ClickableImage({
-            scene: this,
-            x: CANVAS_WIDTH / 2,
-            y: CANVAS_HEIGHT / 2 - 50,
-            key: 'customize',
-            callback: () => {
-                console.log('Customize')
-            },
-            scale: 0.32,
-        })
         const leaderboardImg = new ClickableImage({
             scene: this,
             x: CANVAS_WIDTH / 2,
-            y: CANVAS_HEIGHT / 2 + 50,
+            y: CANVAS_HEIGHT / 2,
             key: 'leader-board',
             callback: () => {
                 console.log('Leaderboard')
@@ -78,7 +68,7 @@ export default class PauseScene extends Phaser.Scene {
         const resumeImg = new ClickableImage({
             scene: this,
             x: CANVAS_WIDTH / 2,
-            y: CANVAS_HEIGHT / 2 + 250,
+            y: CANVAS_HEIGHT / 2 + 200,
             key: 'resume',
             callback: () => {
                 this.scene.switch('PlayScene')

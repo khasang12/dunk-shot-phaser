@@ -10,13 +10,14 @@ import { Text } from '../objects/texts/Text'
 import { Point } from '../types/point'
 import { Sound } from '../types/sound'
 
-let lock = true
+type SceneParam = {
+    skin: string
+}
 
 export default class PlayScene extends Phaser.Scene {
     // Background & Assets & Texts
     private background: Background
     private netAudio: Sound
-    private bounceAudio: Sound
     private gameOverAudio: Sound
     private shootAudio: Sound
     private clickAudio: Sound
@@ -37,7 +38,11 @@ export default class PlayScene extends Phaser.Scene {
     private starCnt: number
     private isGameEnd = false
     private dragStart: Point | null
-    private lineGroup: Phaser.Physics.Arcade.Group
+    private lineGroupBounds: Phaser.Physics.Arcade.Group
+    private lineGroupUpperBounds: Phaser.Physics.Arcade.Group
+    private trajectory: Point[]
+    private points: Phaser.GameObjects.Graphics
+    private shootAngle: number
 
     constructor() {
         super({ key: 'PlayScene' })
@@ -53,33 +58,55 @@ export default class PlayScene extends Phaser.Scene {
         }
     }
 
-    public create() {
+    public create(data: SceneParam) {
         // Reset Vars
         this.score = 0
         this.isGameEnd = false
         this.starCnt = 0
+        this.shootAngle = 0
         this.netAudio = this.sound.add('net')
         this.shootAudio = this.sound.add('shoot')
         this.clickAudio = this.sound.add('click')
-        this.bounceAudio = this.sound.add('bounce')
         this.gameOverAudio = this.sound.add('game-over')
 
         // Create Objects & Events
         this.createAssets()
         this.createWall()
-        this.createObjects()
+        this.createObjects(data)
         this.createEventListeners()
     }
 
     public update() {
-        if (this.ball.getIsMoving()) this.ball.rotation += 0.05
+        if (this.ball.getIsMoving()) this.ball.rotation += 0.1
         this.fps.update()
         this.background.tilePositionY -= 1
         this.cameras.main.setScroll(this.cameras.main.scrollX, this.ball.y - this.curBasket.y)
         this.emitHitLowerBoundEvent()
-        this.emitHitWallEvent()
         this.emitHitCurrentBasketEvent()
         this.emitHitNextBasketEvent()
+    }
+
+    public setTrajectory(power: number, angle: number) {
+        if (angle != this.shootAngle) {
+            this.shootAngle = angle
+            this.trajectory = []
+            this.points = this.add.graphics()
+            this.points.fillStyle(0xffa500, 1)
+            for (let i = 0; i < 6; i++) {
+                const timeSlice = i * 1.5
+                let x = this.ball.x + power * Math.cos(angle) * timeSlice
+                const y =
+                    this.ball.y - power * Math.sin(angle) * timeSlice + 0.5 * 20 * timeSlice ** 2
+                if (x < 0) x = -x
+                else if (x > CANVAS_WIDTH) x = CANVAS_WIDTH - (x - CANVAS_WIDTH)
+                this.trajectory.push({ x, y })
+            }
+            // Loop through each point in the trajectory and draw a circle at that position
+            for (let i = 0; i < 6; i++) {
+                const point = this.trajectory[i]
+                this.points.fillCircle(point.x, point.y, 12 - i)
+            }
+        }
     }
 
     private onPointerDown(pointer: Phaser.Input.Pointer) {
@@ -103,71 +130,72 @@ export default class PlayScene extends Phaser.Scene {
                 pointer.x,
                 pointer.y
             )
-            const velocity = distance / 5
+            const velocity = distance
 
             // set the this to not be dragged anymore
             this.curBasket.setScale(this.curBasket.scaleX, this.curBasket.scaleX)
             this.ball.fly(this.curBasket.x, this.curBasket.y, Math.PI - angle, velocity)
             this.dragStart = null
             this.shootAudio.play()
+            if (this.points) this.points.destroy()
         }
     }
 
     private onPointerMove(pointer: Phaser.Input.Pointer) {
-        // Mutex Lock
-        if (lock && this.dragStart) {
-            lock = false
+        if (pointer.isDown && this.dragStart) {
+            if (this.points) this.points.destroy()
+            // calculate the angle between the bird and the pointer
+            const angle = Phaser.Math.Angle.Between(
+                this.dragStart.x,
+                this.dragStart.y,
+                pointer.x,
+                pointer.y
+            )
 
-            if (pointer.isDown) {
-                // calculate the angle between the bird and the pointer
-                const angle = Phaser.Math.Angle.Between(
-                    this.dragStart.x,
-                    this.dragStart.y,
-                    pointer.x,
-                    pointer.y
-                )
+            // Set the object's rotation to the calculated angle
+            this.curBasket.rotation = angle - Math.PI / 2
 
-                // Set the object's rotation to the calculated angle
-                this.curBasket.rotation = angle - Math.PI / 2
+            // Calculate the distance and angle between the starting position of the drag and the current pointer position
+            const distance = Phaser.Math.Distance.Between(
+                this.dragStart.x,
+                this.dragStart.y,
+                pointer.x,
+                pointer.y
+            )
+            this.setTrajectory(distance, Math.PI / 2 - this.curBasket.rotation)
 
-                // Calculate the distance and angle between the starting position of the drag and the current pointer position
-                const distance = Phaser.Math.Distance.Between(
-                    this.dragStart.x,
-                    this.dragStart.y,
-                    pointer.x,
-                    pointer.y
-                )
-                this.ball.setTrajectory(distance / 5, Math.PI / 2 - this.curBasket.rotation)
-
-                this.curBasket.setScale(
-                    this.curBasket.scaleX,
-                    Math.min(this.curBasket.scaleY * 1.2, 0.9)
-                )
-            }
-
-            setTimeout(function () {
-                lock = true
-            }, 300) // wait for 300ms before allowing another request
+            this.curBasket.setScale(
+                this.curBasket.scaleX,
+                Math.min(this.curBasket.scaleY * 1.2, 0.9)
+            )
         }
     }
 
     private createAssets() {
+        const [W, H] = [CANVAS_WIDTH, CANVAS_HEIGHT]
         this.background = new Background({
             scene: this,
-            x: CANVAS_WIDTH / 2,
-            y: CANVAS_HEIGHT / 2,
+            x: W / 2,
+            y: H / 2,
             w: 4096,
             h: 4096,
             key: 'wall_0',
-            scale: 0.25,
+            scale: 0.45,
         })
 
         this.fps = new FpsText(this)
 
+        const wallUp = new Image({
+            scene: this,
+            x: W / 2,
+            y: -H + 25,
+            key: 'bg_1',
+        }).setAlpha(0.6)
+
         const wallImg = new Image({
             scene: this,
-            x: CANVAS_WIDTH / 2,
-            y: CANVAS_HEIGHT / 2,
+            x: W / 2,
+            y: H / 2,
             key: 'bg_0',
         })
             .setAlpha(0.6)
@@ -179,21 +207,20 @@ export default class PlayScene extends Phaser.Scene {
             y: 50,
             key: 'pause',
             callback: () => {
-                //this.scene.pause('PlayScene')
                 this.scene.switch('PauseScene')
             },
             scale: 0.12,
         })
         this.starImg = new Image({
             scene: this,
-            x: CANVAS_WIDTH - 90,
+            x: W - 90,
             y: 50,
             key: 'star',
             scale: 0.32,
         })
         this.scoreText = new Text({
             scene: this,
-            x: CANVAS_WIDTH - 40,
+            x: W - 40,
             y: 50,
             msg: this.starCnt.toString(),
             style: {
@@ -205,44 +232,43 @@ export default class PlayScene extends Phaser.Scene {
         })
         this.curScoreText = new Text({
             scene: this,
-            x: CANVAS_WIDTH / 2,
-            y: CANVAS_HEIGHT / 2 - 120,
+            x: W / 2,
+            y: H / 2 - 120,
             msg: this.score.toString(),
             style: { fontSize: '150px', color: '#ababab', fontStyle: 'bold' },
         })
     }
 
     private createWall() {
-        this.lineGroup = this.physics.add.group({
+        const [W, H] = [CANVAS_WIDTH, CANVAS_HEIGHT]
+        const line1 = this.add.line(0, -5 * H, 0, -5 * H, 0, 5 * H)
+        const line2 = this.add.line(W, -5 * H, W, -5 * H, W, 5 * H)
+        const line3 = this.add.line(0, 0, 0, 0, 0, H)
+        const line4 = this.add.line(W, 0, W, 0, W, H)
+
+        this.lineGroupUpperBounds = this.physics.add.group({
             allowGravity: false,
             immovable: true,
-            visible: false,
+            visible: true,
+            bounceX: 1,
+            bounceY: 1,
+        })
+        this.lineGroupUpperBounds.add(line1)
+        this.lineGroupUpperBounds.add(line2)
+
+        this.lineGroupBounds = this.physics.add.group({
+            allowGravity: false,
+            immovable: true,
+            visible: true,
             collideWorldBounds: true,
             bounceX: 1,
             bounceY: 1,
         })
-        const line1 = this.add.line(
-            0,
-            -5 * CANVAS_HEIGHT,
-            0,
-            -5 * CANVAS_HEIGHT,
-            0,
-            5 * CANVAS_HEIGHT
-        )
-        const line2 = this.add.line(
-            CANVAS_WIDTH,
-            -5 * CANVAS_HEIGHT,
-            CANVAS_WIDTH,
-            -5 * CANVAS_HEIGHT,
-            CANVAS_WIDTH,
-            5 * CANVAS_HEIGHT
-        )
-
-        this.lineGroup.add(line1)
-        this.lineGroup.add(line2)
+        this.lineGroupUpperBounds.add(line3)
+        this.lineGroupUpperBounds.add(line4)
     }
 
-    private createObjects() {
+    private createObjects(data: SceneParam) {
         this.star = new Star({
             scene: this,
             x: CANVAS_WIDTH - 90,
@@ -284,6 +310,7 @@ export default class PlayScene extends Phaser.Scene {
             key: 'ball',
             scale: 0.12,
         }).setDepth(1)
+        if (data) this.ball.changeSkin(data.skin)
     }
 
     private createEventListeners() {
@@ -291,13 +318,7 @@ export default class PlayScene extends Phaser.Scene {
         this.input.on('pointermove', this.onPointerMove, this)
         this.input.on('pointerup', this.onPointerUp, this)
 
-        this.physics.add.collider(this.ball, this.lineGroup)
-    }
-
-    private emitHitWallEvent() {
-        if (this.physics.collide(this.ball, this.lineGroup)) {
-            this.bounceAudio.play()
-        }
+        this.physics.add.collider(this.ball, [this.lineGroupUpperBounds, this.lineGroupBounds])
     }
 
     private emitHitLowerBoundEvent() {
