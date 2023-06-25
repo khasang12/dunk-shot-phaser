@@ -1,5 +1,13 @@
 import { CANVAS_HEIGHT, CANVAS_WIDTH } from '../../constants'
 import { IGameObject } from '../../types/object'
+import {
+    getAngCoeff,
+    getHypot,
+    getProjectX,
+    getProjectY,
+    randomAngle,
+    randomIntegerInRange,
+} from '../../utils/math'
 import Ball from './Ball'
 import BodyObject from './BodyObject'
 import Star from './Star'
@@ -7,8 +15,8 @@ import Star from './Star'
 export default class Basket extends BodyObject {
     public bodyGroup: Phaser.Physics.Arcade.Group
     public edgeGroup: Phaser.Physics.Arcade.Group
-    public edgeLeft: Phaser.GameObjects.Rectangle
-    public edgeRight: Phaser.GameObjects.Rectangle
+    public edgeRects: Phaser.GameObjects.Rectangle[]
+    public bodyRects: Phaser.GameObjects.Rectangle[]
 
     constructor(o: IGameObject) {
         super(o)
@@ -21,41 +29,66 @@ export default class Basket extends BodyObject {
     }
 
     private createMultiBody() {
+        const edge = 40
+
+        this.bodyRects = [
+            this.scene.add.rectangle(this.x - edge, this.y, edge, edge),
+            this.scene.add.rectangle(this.x, this.y, edge, edge),
+            this.scene.add.rectangle(this.x + edge, this.y, edge, edge),
+        ]
+
+        this.edgeRects = [
+            this.scene.add.rectangle(this.x - 70, this.y - 25, 5, 5),
+            this.scene.add.rectangle(this.x + 70, this.y - 25, 5, 5),
+            this.scene.add.rectangle(this.x + edge, this.y, edge, edge),
+        ]
+
         this.bodyGroup = this.scene.physics.add.group({
             allowGravity: false,
             immovable: true,
             visible: false,
-            collideWorldBounds: false,
         })
-        const edge = 40
-
-        const rect1 = this.scene.add.rectangle(this.x - edge, this.y, edge, edge)
-        const rect2 = this.scene.add.rectangle(this.x, this.y, edge, edge)
-        const rect3 = this.scene.add.rectangle(this.x + edge, this.y, edge, edge)
-
-        this.bodyGroup.add(rect1)
-        this.bodyGroup.add(rect2)
-        this.bodyGroup.add(rect3)
-        this.bodyGroup.setActive(false)
 
         this.edgeGroup = this.scene.physics.add.group({
             allowGravity: false,
             immovable: true,
             visible: false,
-            collideWorldBounds: true,
-            bounceX: 0.2,
-            bounceY: 0.2,
+            bounceX: 0.02,
+            bounceY: 0.02,
         })
-        this.edgeLeft = this.scene.add.rectangle(this.x - 70, this.y - 20, 5, 5)
-        this.edgeRight = this.scene.add.rectangle(this.x + 70, this.y - 20, 5, 5)
 
+        this.addBodyGroup()
         this.addEdgeGroup()
     }
 
+    private addBodyGroup() {
+        for (const body of this.bodyRects) this.bodyGroup.add(body)
+        this.bodyGroup.setActive(false)
+    }
+
     private addEdgeGroup() {
-        this.edgeGroup.add(this.edgeLeft)
-        this.edgeGroup.add(this.edgeRight)
+        for (const body of this.edgeRects) this.edgeGroup.add(body)
         this.edgeGroup.setActive(false)
+    }
+
+    private updateBodyGroup() {
+        const projX = getProjectX(40, this.rotation)
+        const projY = getProjectY(40, this.rotation)
+        this.bodyGroup.setX(this.x - projX, projX)
+        this.bodyGroup.setY(this.y - projY, projY)
+    }
+
+    private updateEdgeGroup() {
+        const alpha = getAngCoeff(this.width, this.height)
+        const l = (getHypot(this.width, this.height) * (this.scale - 0.1)) / 2
+        this.edgeGroup.setX(
+            this.x - getProjectX(l, -this.rotation - alpha),
+            getProjectX(l, -this.rotation + alpha) + getProjectX(l, -this.rotation - alpha)
+        )
+        this.edgeGroup.setY(
+            this.y + getProjectY(l, -this.rotation - alpha),
+            -getProjectY(l, -this.rotation + alpha) - getProjectY(l, -this.rotation - alpha)
+        )
     }
 
     private transition(
@@ -71,30 +104,10 @@ export default class Basket extends BodyObject {
             duration: 1000,
             ease: 'Sine.easeInOut',
             onComplete: () => {
-                console.log('Object move complete!')
-
-                this.bodyGroup.setX(
-                    this.x - 40 * Math.cos(this.rotation),
-                    40 * Math.cos(this.rotation)
-                )
-                this.bodyGroup.setY(
-                    this.y - 40 * Math.sin(this.rotation),
-                    40 * Math.sin(this.rotation)
-                )
-
-                const alpha = Math.atan2(this.height, this.width)
-                const l = (Math.sqrt(this.width ** 2 + this.height ** 2) * (this.scale - 0.1)) / 2
-
+                this.updateBodyGroup()
                 if (edgeCollide) {
                     this.addEdgeGroup()
-                    this.edgeGroup.setX(
-                        this.x - l * Math.cos(-this.rotation - alpha),
-                        l * Math.cos(-this.rotation + alpha) + l * Math.cos(-this.rotation - alpha)
-                    )
-                    this.edgeGroup.setY(
-                        this.y + l * Math.sin(-this.rotation - alpha),
-                        -l * Math.sin(-this.rotation + alpha) - l * Math.sin(-this.rotation - alpha)
-                    )
+                    this.updateEdgeGroup()
                 } else {
                     this.edgeGroup.clear()
                 }
@@ -103,28 +116,25 @@ export default class Basket extends BodyObject {
     }
 
     public resetPosition(obj: Ball | Star | null) {
+        const [W, H] = [CANVAS_WIDTH, CANVAS_HEIGHT]
         const newY =
-            this.y > CANVAS_HEIGHT / 2
-                ? Math.floor(Math.random() * (CANVAS_HEIGHT / 2 - 200 + 1)) + 200
-                : Math.floor(Math.random() * (CANVAS_HEIGHT - 100 - CANVAS_HEIGHT / 2 + 1)) +
-                  CANVAS_HEIGHT / 2
+            this.y > H / 2
+                ? randomIntegerInRange(200, H / 2 - 200)
+                : randomIntegerInRange(H / 2, H - 100)
 
+        this.transition(this, this.x, newY, true)
         if (obj instanceof Ball) {
-            this.transition(this, this.x, newY, false)
             this.transition(obj, this.x, newY, false)
         } else if (obj instanceof Star) {
-            this.transition(this, this.x, newY, true)
-            let angle = 0
-            if (this.x > CANVAS_WIDTH / 2) {
-                angle = -(Math.random() * Math.PI) / 2
+            if (this.x > W / 2) {
+                this.setRotation(-randomAngle() / 2)
             } else {
-                angle = (Math.random() * Math.PI) / 2
+                this.setRotation(randomAngle() / 2)
             }
-            this.setRotation(angle)
             this.transition(
                 obj,
-                this.x + 80 * Math.sin(this.rotation),
-                newY - 80 * Math.cos(this.rotation),
+                this.x + getProjectX(80, Math.PI / 2 - this.rotation),
+                newY - getProjectY(80, Math.PI / 2 - this.rotation),
                 false
             )
             obj.setAlpha(1)

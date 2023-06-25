@@ -21,5 +21,14 @@ export default class Star extends BodyObject {
             loop: -1,
             ease: 'sine.inout',
         })
+
+        this.scene.tweens.add({
+            targets: this,
+            scaleX: 0.25,
+            scaleY: 0.25,
+            yoyo: true,
+            loop: -1,
+            ease: 'sine.inout',
+        })
     }
 }

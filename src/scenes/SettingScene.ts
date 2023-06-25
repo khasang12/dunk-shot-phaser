@@ -19,11 +19,7 @@ export default class SettingScene extends Phaser.Scene {
         super({ key: 'SettingScene' })
     }
 
-    preload() {
-        return
-    }
-
-    create(data: SceneParam) {
+    public create(data: SceneParam) {
         const closeImg = new ClickableImage({
             scene: this,
             x: 50,

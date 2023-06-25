@@ -8,7 +8,7 @@ export default class PauseScene extends Phaser.Scene {
         super({ key: 'PauseScene' })
     }
 
-    create() {
+    public create() {
         const settingsImg = new ClickableImage({
             scene: this,
             x: 80,
@@ -72,7 +72,6 @@ export default class PauseScene extends Phaser.Scene {
             key: 'resume',
             callback: () => {
                 this.scene.switch('PlayScene')
-                //this.scene.bringToTop('PlayScene')
             },
             scale: 0.36,
         })

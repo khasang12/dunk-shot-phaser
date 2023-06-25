@@ -25,6 +25,7 @@ export default class PlayScene extends Phaser.Scene {
     private pauseImg: ClickableImage
     private curScoreText: Text
     private scoreText: Text
+    private incScoreText: Text
     private perfectText: Text
     private fps: FpsText
 
@@ -41,9 +42,6 @@ export default class PlayScene extends Phaser.Scene {
     private dragStart: Point | null
     private lineGroupBounds: Phaser.Physics.Arcade.Group
     private lineGroupUpperBounds: Phaser.Physics.Arcade.Group
-    private trajectory: Point[]
-    private points: Phaser.GameObjects.Graphics
-    private shootAngle: number
 
     constructor() {
         super({ key: 'PlayScene' })
@@ -64,7 +62,6 @@ export default class PlayScene extends Phaser.Scene {
         this.score = 0
         this.isGameEnd = false
         this.starCnt = 0
-        this.shootAngle = 0
         this.netAudio = this.sound.add('net')
         this.shootAudio = this.sound.add('shoot')
         this.clickAudio = this.sound.add('click')
@@ -78,35 +75,19 @@ export default class PlayScene extends Phaser.Scene {
     }
 
     public update() {
-        if (this.ball.getIsMoving()) this.ball.rotation += 0.1
-        this.fps.update()
-        this.background.tilePositionY -= 1
-        this.cameras.main.setScroll(this.cameras.main.scrollX, this.ball.y - this.curBasket.y)
-        this.emitHitLowerBoundEvent()
-        this.emitHitCurrentBasketEvent()
-        this.emitHitNextBasketEvent()
-    }
-
-    public setTrajectory(power: number, angle: number) {
-        if (angle != this.shootAngle) {
-            this.shootAngle = angle
-            this.trajectory = []
-            this.points = this.add.graphics()
-            this.points.fillStyle(0xffa500, 1)
-            for (let i = 0; i < 6; i++) {
-                const timeSlice = i * 1.5
-                let x = this.ball.x + power * Math.cos(angle) * timeSlice
-                const y =
-                    this.ball.y - power * Math.sin(angle) * timeSlice + 0.5 * 20 * timeSlice ** 2
-                if (x < 0) x = -x
-                else if (x > CANVAS_WIDTH) x = CANVAS_WIDTH - (x - CANVAS_WIDTH)
-                this.trajectory.push({ x, y })
-            }
-            // Loop through each point in the trajectory and draw a circle at that position
-            for (let i = 0; i < 6; i++) {
-                const point = this.trajectory[i]
-                this.points.fillCircle(point.x, point.y, 12 - i)
-            }
+        this.updateBackground()
+        if (this.ball.y > CANVAS_HEIGHT) {
+            this.emitHitLowerBoundEvent()
+        }
+        if (
+            (this.ball.body?.velocity.y || 0) > 0 &&
+            this.physics.collide(this.ball, this.curBasket.bodyGroup) &&
+            this.ball.body?.touching.down
+        ) {
+            this.emitHitCurrentBasketEvent()
+        }
+        if (this.physics.collide(this.ball, this.nextBasket.bodyGroup)) {
+            this.emitHitNextBasketEvent()
         }
     }
 
@@ -116,35 +97,31 @@ export default class PlayScene extends Phaser.Scene {
 
     private onPointerUp(pointer: Phaser.Input.Pointer) {
         if (this.dragStart) {
-            // calculate the angle between the bird and the pointer
-            const angle = Phaser.Math.Angle.Between(
-                this.dragStart.x,
-                this.dragStart.y,
-                pointer.x,
-                pointer.y
-            )
-
-            // apply velocity to the this based on the angle and distance
-            const distance = Phaser.Math.Distance.Between(
-                this.dragStart.x,
-                this.dragStart.y,
-                pointer.x,
-                pointer.y
-            )
-            const velocity = distance
-
-            // set the this to not be dragged anymore
+            const [velocity, angle] = this.estimateVelocityAndAngle(pointer)
             this.curBasket.setScale(this.curBasket.scaleX, this.curBasket.scaleX)
-            this.ball.fly(this.curBasket.x, this.curBasket.y, Math.PI - angle, velocity)
+            this.ball.fly(this.curBasket.x, this.curBasket.y, angle + Math.PI, velocity)
             this.dragStart = null
             this.shootAudio.play()
-            if (this.points) this.points.destroy()
+            this.curBasket.setRotation(0)
+            if (this.ball.points) this.ball.points.destroy()
         }
     }
 
     private onPointerMove(pointer: Phaser.Input.Pointer) {
-        if (pointer.isDown && this.dragStart) {
-            if (this.points) this.points.destroy()
+        if (pointer.isDown) {
+            if (this.ball.points) this.ball.points.destroy()
+            const [velocity, angle] = this.estimateVelocityAndAngle(pointer)
+            this.curBasket.rotation = angle - Math.PI / 2
+            this.ball.setTrajectory(velocity, Math.PI / 2 - this.curBasket.rotation)
+            this.curBasket.setScale(
+                this.curBasket.scaleX,
+                Math.min(this.curBasket.scaleY * 1.2, 0.9)
+            )
+        }
+    }
+
+    private estimateVelocityAndAngle(pointer: Phaser.Input.Pointer): number[] {
+        if (this.dragStart) {
             // calculate the angle between the bird and the pointer
             const angle = Phaser.Math.Angle.Between(
                 this.dragStart.x,
@@ -152,9 +129,6 @@ export default class PlayScene extends Phaser.Scene {
                 pointer.x,
                 pointer.y
             )
-
-            // Set the object's rotation to the calculated angle
-            this.curBasket.rotation = angle - Math.PI / 2
 
             // Calculate the distance and angle between the starting position of the drag and the current pointer position
             const distance = Phaser.Math.Distance.Between(
@@ -163,17 +137,17 @@ export default class PlayScene extends Phaser.Scene {
                 pointer.x,
                 pointer.y
             )
-            this.setTrajectory(distance, Math.PI / 2 - this.curBasket.rotation)
 
-            this.curBasket.setScale(
-                this.curBasket.scaleX,
-                Math.min(this.curBasket.scaleY * 1.2, 0.9)
-            )
+            return [distance, angle]
         }
+        return [0, 0]
     }
 
     private createAssets() {
         const [W, H] = [CANVAS_WIDTH, CANVAS_HEIGHT]
+
+        this.fps = new FpsText(this)
+
         this.background = new Background({
             scene: this,
             x: W / 2,
@@ -183,8 +157,6 @@ export default class PlayScene extends Phaser.Scene {
             key: 'wall_0',
             scale: 0.45,
         })
-
-        this.fps = new FpsText(this)
 
         const wallUp = new Image({
             scene: this,
@@ -199,8 +171,7 @@ export default class PlayScene extends Phaser.Scene {
             y: H / 2,
             key: 'bg_0',
         })
-            .setAlpha(0.6)
-            .setScale(0.55)
+        wallImg.setAlpha(0.6).setScale(0.55)
 
         this.pauseImg = new ClickableImage({
             scene: this,
@@ -212,6 +183,7 @@ export default class PlayScene extends Phaser.Scene {
             },
             scale: 0.12,
         })
+
         this.starImg = new Image({
             scene: this,
             x: W - 90,
@@ -219,6 +191,7 @@ export default class PlayScene extends Phaser.Scene {
             key: 'star',
             scale: 0.32,
         })
+
         this.scoreText = new Text({
             scene: this,
             x: W - 40,
@@ -231,6 +204,7 @@ export default class PlayScene extends Phaser.Scene {
                 strokeThickness: 3,
             },
         })
+
         this.curScoreText = new Text({
             scene: this,
             x: W / 2,
@@ -244,7 +218,15 @@ export default class PlayScene extends Phaser.Scene {
             x: -100,
             y: -100,
             msg: 'PERFECT!!',
-            style: { fontSize: '18px', color: '#ffa500', fontStyle: 'bold' },
+            style: { fontSize: '25px', color: '#ffa500', fontStyle: 'bold' },
+        })
+
+        this.incScoreText = new Text({
+            scene: this,
+            x: -100,
+            y: -100,
+            msg: '+1',
+            style: { fontSize: '50px', color: 'red', fontStyle: 'bold' },
         })
     }
 
@@ -334,86 +316,73 @@ export default class PlayScene extends Phaser.Scene {
         ])
     }
 
+    private updateBackground() {
+        if (this.ball.getIsMoving()) this.ball.rotation += 0.1
+        this.fps.update()
+        this.background.tilePositionY -= 1
+        this.cameras.main.setScroll(this.cameras.main.scrollX, this.ball.y - this.curBasket.y)
+    }
+
     private emitHitLowerBoundEvent() {
-        if (this.ball.y > CANVAS_HEIGHT) {
-            this.gameOverAudio.play()
-            this.scene.start('GameOverScene', { data: this.score })
-            const curHighScore = localStorage.getItem('high-score')
-            if (curHighScore == null) {
-                localStorage.setItem('high-score', this.score.toString())
-            } else {
-                localStorage.setItem(
-                    'high-score',
-                    Math.max(parseInt(curHighScore), this.score).toString()
-                )
-            }
-            localStorage.setItem(
-                'star',
-                (
-                    (localStorage.getItem('star')
-                        ? parseInt(<string>localStorage.getItem('star'))
-                        : 0) + this.starCnt
-                ).toString()
-            )
-            this.isGameEnd = true
-        }
+        this.gameOverAudio.play()
+        this.scene.start('GameOverScene', { data: this.score })
+        this.saveScore()
+        this.isGameEnd = true
     }
 
     private emitHitCurrentBasketEvent() {
-        if (
-            (this.ball.body?.velocity.y || 0) > 0 &&
-            this.physics.collide(this.ball, this.curBasket.bodyGroup) &&
-            this.ball.body?.touching.down
-        ) {
-            this.curBasket.reset()
-            this.ball.resetPosition(this.curBasket.x, this.curBasket.y)
-            this.netAudio.play()
-        }
+        this.curBasket.reset()
+        this.ball.resetPosition(this.curBasket.x, this.curBasket.y)
+        this.netAudio.play()
     }
 
     private emitHitNextBasketEvent() {
         if (this.ball.body) {
             const veloAngle = Math.atan2(this.ball.body?.velocity.y, this.ball.body?.velocity.x)
-            if (
-                this.ball.body?.velocity.y > 0 &&
-                this.physics.collide(this.ball, this.nextBasket.bodyGroup) &&
-                Math.abs(this.nextBasket.rotation - veloAngle) <= Math.PI / 2.2 // ensure direct collision
-            ) {
-                {
-                    if (this.nextBasket.rotation - -veloAngle <= 0.15) {
-                        this.perfectText.setX(this.nextBasket.x)
-                        this.perfectText.setY(this.nextBasket.y - 50)
-                        this.perfectText.setAlpha(1)
-                        this.tweens.add({
-                            targets: this.perfectText,
-                            alpha: 0,
-                            duration: 500,
-                            ease: 'ease.sineInOut',
-                            onComplete: () => {
-                                this.perfectText.setAlpha(0)
-                            },
-                        })
-                    }
-                }
-                this.netAudio.play()
-                this.score += 1
-                this.curScoreText.text = this.score.toString()
-                this.ball.resetPosition(this.nextBasket.x, this.nextBasket.y)
-
-                this.curBasket.resetPosition(this.star)
-                this.nextBasket.resetPosition(this.ball)
-
+            this.netAudio.play()
+            if (this.nextBasket.rotation - -veloAngle <= 0.15) {
+                this.score += 2
+                this.perfectText.emitTextFadeInOut(this.nextBasket.x, this.nextBasket.y - 50, 1000)
+                this.incScoreText.setText('+2')
                 if (Math.abs(this.ball.getBounds().centerX - this.star.getBounds().centerX) < 50) {
                     this.starCnt++
-
                     this.clickAudio.play()
                     this.scoreText.text = this.starCnt.toString()
                 }
-
-                const temp = this.curBasket
-                this.curBasket = this.nextBasket
-                this.nextBasket = temp
+            } else {
+                this.score += 1
+                this.incScoreText.setText('+1')
             }
+
+            this.incScoreText.emitTextFadeInOut(this.nextBasket.x, this.nextBasket.y, 1000)
+            this.curScoreText.text = this.score.toString()
+            this.ball.resetPosition(this.nextBasket.x, this.nextBasket.y)
+            this.curBasket.resetPosition(this.star)
+            this.nextBasket.resetPosition(this.ball)
+
+            const temp = this.curBasket
+            this.curBasket = this.nextBasket
+            this.nextBasket = temp
         }
+    }
+
+    private saveScore() {
+        const curHighScore = localStorage.getItem('high-score')
+        if (curHighScore == null) {
+            localStorage.setItem('high-score', this.score.toString())
+        } else {
+            localStorage.setItem(
+                'high-score',
+                Math.max(parseInt(curHighScore), this.score).toString()
+            )
+        }
+        localStorage.setItem(
+            'star',
+            (
+                (localStorage.getItem('star')
+                    ? parseInt(<string>localStorage.getItem('star'))
+                    : 0) + this.starCnt
+            ).toString()
+        )
     }
 }

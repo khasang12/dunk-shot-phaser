@@ -1,11 +1,14 @@
 import { CANVAS_HEIGHT, CANVAS_WIDTH } from '../../constants'
 import { IGameObject } from '../../types/object'
+import { Point } from '../../types/point'
+import { getProjectX, getProjectY } from '../../utils/math'
 import BodyObject from './BodyObject'
 
 export default class Ball extends BodyObject {
     private elapsed: number
     private isMoving: boolean
-    
+    private trajectory: Point[]
+    public points: Phaser.GameObjects.Graphics
 
     constructor(o: IGameObject) {
         super(o)
@@ -59,10 +62,11 @@ export default class Ball extends BodyObject {
     public fly(x: number, y: number, angle: number, speed: number) {
         if (speed > 0) {
             this.isMoving = true
-            const curSpeed = speed*7.2
+            const curSpeed = speed * 7.2
             this.enableBody(true, x, y, true, true)
-            this.setVelocity(curSpeed * Math.cos(angle), -curSpeed * Math.sin(angle))
-            this.scene.physics.velocityFromRotation(-angle, curSpeed, this.body?.velocity)
+            this.setVelocity(getProjectX(curSpeed, angle), -getProjectY(curSpeed, angle))
+            console.log(this.body?.velocity)
+            this.scene.physics.velocityFromRotation(angle, curSpeed, this.body?.velocity)
         }
     }
 
@@ -78,7 +82,26 @@ export default class Ball extends BodyObject {
         this.disableBody(true, false)
     }
 
-    public changeSkin(key: string){
+    public changeSkin(key: string) {
         this.setTexture(key)
-    }    
+    }
+
+    public setTrajectory(power: number, angle: number) {
+        this.trajectory = []
+        this.points = this.scene.add.graphics()
+        this.points.fillStyle(0xffa500, 1)
+        for (let i = 0; i < 6; i++) {
+            const timeSlice = i * 1.5
+            let x = this.x + getProjectX(power, angle) * timeSlice
+            const y = this.y - getProjectY(power, angle) * timeSlice + 0.5 * 20 * timeSlice ** 2
+            if (x < 0) x = -x // symmetric
+            else if (x > CANVAS_WIDTH) x = CANVAS_WIDTH - (x - CANVAS_WIDTH)
+            this.trajectory.push({ x, y })
+        }
+        // Loop through each point in the trajectory and draw a circle at that position
+        for (let i = 0; i < 6; i++) {
+            const point = this.trajectory[i]
+            this.points.fillCircle(point.x, point.y, 12 - i)
+        }
+    }
 }

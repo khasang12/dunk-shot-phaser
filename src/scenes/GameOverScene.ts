@@ -12,11 +12,7 @@ export default class GameOverScene extends Phaser.Scene {
         super({ key: 'GameOverScene' })
     }
 
-    preload() {
-        return
-    }
-
-    create(data: SceneParam) {
+    public create(data: SceneParam) {
         this.cameras.main.fadeIn(500, 0, 0, 0)
 
         const star = new Image({
