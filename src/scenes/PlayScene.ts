@@ -25,6 +25,7 @@ export default class PlayScene extends Phaser.Scene {
     private pauseImg: ClickableImage
     private curScoreText: Text
     private scoreText: Text
+    private perfectText: Text
     private fps: FpsText
 
     // GameObjects
@@ -237,14 +238,22 @@ export default class PlayScene extends Phaser.Scene {
             msg: this.score.toString(),
             style: { fontSize: '150px', color: '#ababab', fontStyle: 'bold' },
         })
+
+        this.perfectText = new Text({
+            scene: this,
+            x: -100,
+            y: -100,
+            msg: 'PERFECT!!',
+            style: { fontSize: '18px', color: '#ffa500', fontStyle: 'bold' },
+        })
     }
 
     private createWall() {
         const [W, H] = [CANVAS_WIDTH, CANVAS_HEIGHT]
         const line1 = this.add.line(0, -5 * H, 0, -5 * H, 0, 5 * H)
         const line2 = this.add.line(W, -5 * H, W, -5 * H, W, 5 * H)
-        const line3 = this.add.line(0, 0, 0, 0, 0, H)
-        const line4 = this.add.line(W, 0, W, 0, W, H)
+        const line3 = this.add.line(0, 0, 0, 0, 0, H * 2)
+        const line4 = this.add.line(W, 0, W, 0, W, H * 2)
 
         this.lineGroupUpperBounds = this.physics.add.group({
             allowGravity: false,
@@ -264,8 +273,8 @@ export default class PlayScene extends Phaser.Scene {
             bounceX: 1,
             bounceY: 1,
         })
-        this.lineGroupUpperBounds.add(line3)
-        this.lineGroupUpperBounds.add(line4)
+        this.lineGroupBounds.add(line3)
+        this.lineGroupBounds.add(line4)
     }
 
     private createObjects(data: SceneParam) {
@@ -318,7 +327,11 @@ export default class PlayScene extends Phaser.Scene {
         this.input.on('pointermove', this.onPointerMove, this)
         this.input.on('pointerup', this.onPointerUp, this)
 
-        this.physics.add.collider(this.ball, [this.lineGroupUpperBounds, this.lineGroupBounds])
+        this.physics.add.collider(this.ball, [
+            this.lineGroupUpperBounds,
+            this.lineGroupBounds,
+            this.nextBasket.edgeGroup,
+        ])
     }
 
     private emitHitLowerBoundEvent() {
@@ -359,24 +372,48 @@ export default class PlayScene extends Phaser.Scene {
     }
 
     private emitHitNextBasketEvent() {
-        if (this.physics.collide(this.ball, this.nextBasket.bodyGroup)) {
-            this.netAudio.play()
-            this.score += 1
-            this.curScoreText.text = this.score.toString()
-            this.ball.resetPosition(this.nextBasket.x, this.nextBasket.y)
+        if (this.ball.body) {
+            const veloAngle = Math.atan2(this.ball.body?.velocity.y, this.ball.body?.velocity.x)
+            if (
+                this.ball.body?.velocity.y > 0 &&
+                this.physics.collide(this.ball, this.nextBasket.bodyGroup) &&
+                Math.abs(this.nextBasket.rotation - veloAngle) <= Math.PI / 2.2 // ensure direct collision
+            ) {
+                {
+                    if (this.nextBasket.rotation - -veloAngle <= 0.15) {
+                        this.perfectText.setX(this.nextBasket.x)
+                        this.perfectText.setY(this.nextBasket.y - 50)
+                        this.perfectText.setAlpha(1)
+                        this.tweens.add({
+                            targets: this.perfectText,
+                            alpha: 0,
+                            duration: 500,
+                            ease: 'ease.sineInOut',
+                            onComplete: () => {
+                                this.perfectText.setAlpha(0)
+                            },
+                        })
+                    }
+                }
+                this.netAudio.play()
+                this.score += 1
+                this.curScoreText.text = this.score.toString()
+                this.ball.resetPosition(this.nextBasket.x, this.nextBasket.y)
 
-            this.curBasket.resetPosition(this.star)
-            this.nextBasket.resetPosition(this.ball)
+                this.curBasket.resetPosition(this.star)
+                this.nextBasket.resetPosition(this.ball)
 
-            if (Math.abs(this.ball.getBounds().centerX - this.star.getBounds().centerX) < 50) {
-                this.starCnt++
-                this.clickAudio.play()
-                this.scoreText.text = this.starCnt.toString()
+                if (Math.abs(this.ball.getBounds().centerX - this.star.getBounds().centerX) < 50) {
+                    this.starCnt++
+
+                    this.clickAudio.play()
+                    this.scoreText.text = this.starCnt.toString()
+                }
+
+                const temp = this.curBasket
+                this.curBasket = this.nextBasket
+                this.nextBasket = temp
             }
-
-            const temp = this.curBasket
-            this.curBasket = this.nextBasket
-            this.nextBasket = temp
         }
     }
 }

@@ -38,7 +38,6 @@ export default class Ball extends BodyObject {
 
         // Calculate the position of the sprite along the parabolic trajectory
         let t = ((this.elapsed / duration) * delta) / 16
-        console.log(delta)
         const x =
             startPoint.x +
             t * (2 * (1 - t) * (apexPoint.x - startPoint.x) + t * (endPoint.x - startPoint.x))
