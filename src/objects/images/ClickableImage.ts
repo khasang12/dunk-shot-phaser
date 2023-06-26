@@ -45,3 +45,5 @@ export default class ClickableImage extends Image {
         })
     }
 }
+
+

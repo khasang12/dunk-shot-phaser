@@ -35,7 +35,6 @@ export default class PlayScene extends Phaser.Scene {
     private nextBasket: Basket
     private ball: Ball
     private star: Star
-    private vision: Phaser.GameObjects.Image
 
     // Game Controller Variables
     private score: number
@@ -78,10 +77,6 @@ export default class PlayScene extends Phaser.Scene {
     }
 
     public update(dt: number) {
-        if (this.vision) {
-            this.vision.x = this.ball.x
-            this.vision.y = this.ball.y
-        }
         this.ball.update(dt)
         this.updateBackground()
         if (this.ball.y > CANVAS_HEIGHT) {
@@ -94,9 +89,14 @@ export default class PlayScene extends Phaser.Scene {
         ) {
             this.onHitCurrentBasket()
         }
-        if (this.physics.collide(this.ball, this.nextBasket.bodyGroup)) {
+
+        if (
+            this.physics.overlap(this.ball, this.nextBasket.openGroup) &&
+            this.physics.collide(this.ball, this.nextBasket.bodyGroup)
+        ) {
             this.onHitNextBasket()
         }
+        if (this.physics.collide(this.ball, this.nextBasket.bodyGroup)) this.onHitObstacle()
     }
 
     private onPointerDown(pointer: Phaser.Input.Pointer) {
@@ -107,7 +107,7 @@ export default class PlayScene extends Phaser.Scene {
         if (this.dragStart) {
             const [velocity, angle] = this.estimateVelocityAndAngle(pointer)
             this.curBasket.stateMachine.setState('idle')
-            
+
             this.ball.stateMachine.setState(
                 'fly',
                 this.curBasket.x,
@@ -348,36 +348,41 @@ export default class PlayScene extends Phaser.Scene {
         this.netAudio.play()
     }
 
+    private onHitObstacle() {
+        this.nextBasket.vibrateX()
+    }
+
     private onHitNextBasket() {
         if (this.ball.body) {
+            let bonus = 0
             const veloAngle = Math.atan2(this.ball.body?.velocity.y, this.ball.body?.velocity.x)
             this.netAudio.play()
-            this.score += 1
+            bonus += 1
             this.ball.stateMachine.setState(
                 'idle',
                 this.nextBasket.x,
                 this.nextBasket.y,
                 this.score
             )
-            if (this.nextBasket.rotation - -veloAngle <= 0.15) {
-                this.score += 1
+            if (this.ball.isPowerUp()) bonus += 1
+            if (this.nextBasket.rotation - -veloAngle <= 0.2) {
+                bonus += 1
                 this.perfectText.emitTextFadeInOut(this.nextBasket.x, this.nextBasket.y - 50, 1000)
-                this.incScoreText.setText('+2')
                 if (Math.abs(this.ball.getBounds().centerX - this.star.getBounds().centerX) < 50) {
                     this.starCnt++
                     this.clickAudio.play()
                     this.scoreText.text = this.starCnt.toString()
                 }
-            } else {
-                this.incScoreText.setText('+1')
             }
-
+            this.incScoreText.setText('+' + bonus.toString())
+            this.ball.disablePowerUp()
+            this.score += bonus
             this.incScoreText.emitTextFadeInOut(this.nextBasket.x, this.nextBasket.y, 1000)
             this.curScoreText.text = this.score.toString()
-            this.curBasket.stateMachine.setState('transit')
-            this.nextBasket.stateMachine.setState('transit')
-            this.curBasket.resetPositionByBasketPosition(this.star)
-            this.nextBasket.resetPositionByBasketPosition(this.ball)
+            this.curBasket.stateMachine.setState('transit', 1)
+            this.nextBasket.stateMachine.setState('transit', 0)
+            this.curBasket.moveFollower(this.star)
+            this.nextBasket.moveFollower(this.ball)
 
             const temp = this.curBasket
             this.curBasket = this.nextBasket

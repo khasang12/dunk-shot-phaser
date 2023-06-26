@@ -111,6 +111,7 @@ export default class PreloadScene extends Phaser.Scene {
         this.load.image('leader-board', 'leader-board.png')
         this.load.image('main-menu', 'mainmenu.png')
         this.load.image('resume', 'resume.png')
+        this.load.image('lock', 'lock.png')
     }
 
     private preloadBalls(): void {

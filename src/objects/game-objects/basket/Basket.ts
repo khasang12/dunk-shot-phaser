@@ -17,7 +17,9 @@ export default class Basket extends BodyObject {
     public stateMachine: StateMachine
     public bodyGroup: Phaser.Physics.Arcade.Group
     public edgeGroup: Phaser.Physics.Arcade.Group
+    public openGroup: Phaser.Physics.Arcade.Group
     public edgeRects: Phaser.GameObjects.Rectangle[]
+    public openRects: Phaser.GameObjects.Rectangle[]
     public bodyRects: Phaser.GameObjects.Rectangle[]
 
     constructor(o: IGameObject) {
@@ -60,10 +62,22 @@ export default class Basket extends BodyObject {
             this.scene.add.rectangle(this.x + edge, this.y, edge, edge),
         ]
 
+        this.openRects = [
+            this.scene.add.rectangle(this.x - 25, this.y - 25, 20, 25),
+            this.scene.add.rectangle(this.x + 25, this.y - 25, 20, 25),
+            this.scene.add.rectangle(this.x + edge, this.y, edge, edge),
+        ]
+
         this.bodyGroup = this.scene.physics.add.group({
             allowGravity: false,
             immovable: true,
             visible: false,
+        })
+
+        this.openGroup = this.scene.physics.add.group({
+            allowGravity: false,
+            immovable: true,
+            visible: true,
         })
 
         this.edgeGroup = this.scene.physics.add.group({
@@ -76,11 +90,17 @@ export default class Basket extends BodyObject {
 
         this.addBodyGroup()
         this.addEdgeGroup()
+        this.addOpenGroup()
     }
 
     private addBodyGroup() {
         for (const body of this.bodyRects) this.bodyGroup.add(body)
         this.bodyGroup.setActive(false)
+    }
+
+    private addOpenGroup() {
+        for (const body of this.openRects) this.openGroup.add(body)
+        this.openGroup.setActive(false)
     }
 
     private addEdgeGroup() {
@@ -97,12 +117,25 @@ export default class Basket extends BodyObject {
 
     private updateEdgeGroup() {
         const alpha = getAngCoeff(this.width, this.height)
-        const l = (getHypot(this.width, this.height) * (this.scale - 0.1)) / 2
+        const l = (getHypot(this.width, this.height) * this.scale) / 2
         this.edgeGroup.setX(
             this.x - getProjectX(l, -this.rotation - alpha),
             getProjectX(l, -this.rotation + alpha) + getProjectX(l, -this.rotation - alpha)
         )
         this.edgeGroup.setY(
+            this.y + getProjectY(l, -this.rotation - alpha),
+            -getProjectY(l, -this.rotation + alpha) - getProjectY(l, -this.rotation - alpha)
+        )
+    }
+
+    private updateOpenGroup() {
+        const alpha = getAngCoeff(this.width, this.height)
+        const l = (getHypot(this.width, this.height) * (this.scale - 0.1)) / 4
+        this.openGroup.setX(
+            this.x - getProjectX(l, -this.rotation - alpha),
+            getProjectX(l, -this.rotation + alpha) + getProjectX(l, -this.rotation - alpha)
+        )
+        this.openGroup.setY(
             this.y + getProjectY(l, -this.rotation - alpha),
             -getProjectY(l, -this.rotation + alpha) - getProjectY(l, -this.rotation - alpha)
         )
@@ -123,23 +156,22 @@ export default class Basket extends BodyObject {
             onComplete: () => {
                 this.updateBodyGroup()
                 if (edgeCollide) {
-                    this.addEdgeGroup()
                     this.updateEdgeGroup()
-                } else {
-                    this.edgeGroup.clear()
+                    this.updateOpenGroup()
                 }
             },
         })
     }
 
-    public onTransitEnter() {
+    public onTransitEnter(data: number[]) {
         const [_W, H] = [CANVAS_WIDTH, CANVAS_HEIGHT]
+        const [state] = data
         const newY =
             this.y > H / 2
                 ? randomIntegerInRange(200, H / 2 - 200)
                 : randomIntegerInRange(H / 2, H - 100)
         this.y = newY
-        this.transition(this, this.x, newY, true)
+        this.transition(this, this.x, newY, state == 1 ? true : false)
     }
 
     public onIdleEnter() {
@@ -153,7 +185,7 @@ export default class Basket extends BodyObject {
         this.setScale(this.scaleX, Math.min(this.scaleY * 1.2, 0.9))
     }
 
-    public resetPositionByBasketPosition(obj: Ball | Star | null) {
+    public moveFollower(obj: Ball | Star | null) {
         const [W, _H] = [CANVAS_WIDTH, CANVAS_HEIGHT]
         if (obj instanceof Ball) {
             this.transition(obj, this.x, this.y, false)
@@ -175,5 +207,27 @@ export default class Basket extends BodyObject {
 
     public reset() {
         this.angle = 0
+    }
+
+    public vibrateX() {
+        this.scene.tweens.add({
+            targets: this,
+            x: this.x - 10,
+            duration: 20,
+            ease: 'Linear',
+            yoyo: true,
+            repeat: 3,
+        })
+    }
+
+    public vibrateY() {
+        this.scene.tweens.add({
+            targets: this,
+            y: this.x - 10,
+            duration: 20,
+            ease: 'Linear',
+            yoyo: true,
+            repeat: 3,
+        })
     }
 }

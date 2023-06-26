@@ -8,6 +8,7 @@ import BodyObject from '../BodyObject'
 export default class Ball extends BodyObject {
     private elapsed: number
     private isMoving: boolean
+    private powerUp: boolean
     private trajectory: Point[]
     public points: Phaser.GameObjects.Graphics
     public stateMachine: StateMachine
@@ -17,12 +18,13 @@ export default class Ball extends BodyObject {
         super(o)
         this.elapsed = 0
         this.isMoving = false
+        this.powerUp = false
 
         this.scene.physics.add.existing(this)
 
         this.disableBody(true, true)
         this.body?.setCircle(this.width / 2)
-        this.setBounce(1, 1)
+        this.setBounce(0.75, 0.75)
         this.setVisible(true)
         this.setGravityY(9.8)
         this.setCollideWorldBounds(false, 1, 1, true)
@@ -55,10 +57,12 @@ export default class Ball extends BodyObject {
     }
 
     public onIdleEnter(data: number[]) {
+        if (this.emitter) this.emitter.stop()
         if (data.length > 0) {
             const [x, y, score] = data
             if (score && score % 5 == 0 && score > 0)
                 this.scene.time.delayedCall(1000, () => {
+                    this.powerUp = true
                     this.emitter = this.scene.add.particles(0, 0, 'spark', {
                         speed: 20,
                         lifespan: 1500,
@@ -68,6 +72,7 @@ export default class Ball extends BodyObject {
                         emitZone: { type: 'random', source: this.getBounds(), quantity: 1 },
                         duration: 0,
                     })
+                    this.emitter.startFollow(this)
                     this.emitter.start()
                 })
             this.setX(x)
@@ -107,7 +112,6 @@ export default class Ball extends BodyObject {
     }
 
     public onFlyEnter(data: number[]) {
-        if (this.emitter) this.emitter.stop()
         const [x, y, angle, speed] = data
         if (speed > 0) {
             this.isMoving = true
@@ -144,5 +148,13 @@ export default class Ball extends BodyObject {
 
     public onSnipeExit() {
         this.points.destroy()
+    }
+
+    public isPowerUp(){
+        return this.powerUp
+    }
+
+    public disablePowerUp(){
+        this.powerUp = false
     }
 }

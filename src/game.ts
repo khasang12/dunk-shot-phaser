@@ -12,7 +12,8 @@ export const config = {
     type: Phaser.AUTO,
     parent: 'game',
     transparent: true,
-    canvasStyle: 'border: 2px solid black; box-shadow: 0 0 10px rgba(255, 165, 0, 0.5)',
+    canvasStyle:
+        'border-left: 2px solid black; border-right: 2px solid black',
     scale: {
         parent: 'phaser-game',
         mode: Phaser.Scale.FIT,

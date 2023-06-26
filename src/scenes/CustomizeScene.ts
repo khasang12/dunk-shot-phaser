@@ -1,15 +1,25 @@
 import { CANVAS_WIDTH } from '../constants'
 import ClickableImage from '../objects/images/ClickableImage'
+import Image from '../objects/images/Image'
 import { Text } from '../objects/texts/Text'
 import { Point } from '../types/point'
 
 export default class CustomizeScene extends Phaser.Scene {
     private lastPointer: Point
+    private starText: Text
+    private curBalls: string[]
+
     constructor() {
         super({ key: 'CustomizeScene' })
         this.lastPointer = { x: 0, y: 0 }
+        if (localStorage.getItem('balls') == null) {
+            localStorage.setItem('balls', JSON.stringify([]))
+            this.curBalls = []
+        }
     }
     public create() {
+        this.curBalls = JSON.parse(<string>localStorage.getItem('balls'))
+        console.log(this.curBalls)
         // Enable the camera and set its bounds to the size of the world
         this.cameras.main.setBounds(0, 0, CANVAS_WIDTH, 1900)
 
@@ -34,160 +44,81 @@ export default class CustomizeScene extends Phaser.Scene {
             style: { fontFamily: 'MilkyHoney', fontSize: '45px', color: '#ababab' },
         })
 
-        const ball1 = new ClickableImage({
+        const starImg = new Image({
             scene: this,
-            x: CANVAS_WIDTH / 2,
-            y: 190,
-            key: 'ball_1',
-            callback: () => {
-                // Switch to the game scene
-                this.scene.start('StartScene', { skin: 'ball_1' })
-            },
-            scale: 0.3,
+            x: CANVAS_WIDTH - 90,
+            y: 50,
+            key: 'star',
+            scale: 0.32,
         })
 
-        const ball2 = new ClickableImage({
+        this.starText = new Text({
             scene: this,
-            x: CANVAS_WIDTH / 2,
-            y: 320,
-            key: 'ball_2',
-            callback: () => {
-                // Switch to the game scene
-                this.scene.start('StartScene', { skin: 'ball_2' })
+            x: CANVAS_WIDTH - 40,
+            y: 50,
+            msg: <string>localStorage.getItem('star'),
+            style: {
+                fontFamily: 'MilkyHoney',
+                fontSize: '45px',
+                color: 'black',
+                strokeThickness: 3,
             },
-            scale: 0.3,
         })
 
-        const ball3 = new ClickableImage({
-            scene: this,
-            x: CANVAS_WIDTH / 2,
-            y: 450,
-            key: 'ball_3',
-            callback: () => {
-                // Switch to the game scene
-                this.scene.start('StartScene', { skin: 'ball_3' })
-            },
-            scale: 0.3,
-        })
+        const x = CANVAS_WIDTH / 2
+        this.createBallButton(x, 190, 'ball_1', 10)
+        this.createBallButton(x, 320, 'ball_2', 10)
+        this.createBallButton(x, 450, 'ball_3', 10)
+        this.createBallButton(x, 580, 'ball_4', 10)
+        this.createBallButton(x, 710, 'ball_5', 10)
+        this.createBallButton(x, 840, 'ball_6', 10)
+        this.createBallButton(x, 970, 'ball_7', 10)
+        this.createBallButton(x, 1100, 'ball_8', 10)
+        this.createBallButton(x, 1230, 'ball_9', 10)
+        this.createBallButton(x, 1360, 'ball_10', 10)
+        this.createBallButton(x, 1490, 'ball_11', 10)
+        this.createBallButton(x, 1620, 'ball_12', 10)
+        this.createBallButton(x, 1750, 'ball_locked', 10)
+    }
 
-        const ball4 = new ClickableImage({
+    private createBallButton(x: number, y: number, key: string, price: number) {
+        const ball = new ClickableImage({
             scene: this,
-            x: CANVAS_WIDTH / 2,
-            y: 580,
-            key: 'ball_4',
+            x: x,
+            y: y,
+            key: key,
             callback: () => {
-                // Switch to the game scene
-                this.scene.start('StartScene', { skin: 'ball_4' })
+                this.scene.start('StartScene', { skin: key })
             },
             scale: 0.3,
         })
+        if (!this.curBalls.includes(key)) {
+            ball.setAlpha(0.5)
+            const getBtn = new ClickableImage({
+                scene: this,
+                x: x,
+                y: y,
+                key: 'lock',
+                scale: 0.3 * 1.5,
+                callback: () => {
+                    if (this.purchase(key, price)) {
+                        ball.setAlpha(1)
+                        getBtn.destroy()
+                    }
+                },
+            })
+        }
+    }
 
-        const ball5 = new ClickableImage({
-            scene: this,
-            x: CANVAS_WIDTH / 2,
-            y: 710,
-            key: 'ball_5',
-            callback: () => {
-                // Switch to the game scene
-                this.scene.start('StartScene', { skin: 'ball_5' })
-            },
-            scale: 0.3,
-        })
-
-        const ball6 = new ClickableImage({
-            scene: this,
-            x: CANVAS_WIDTH / 2,
-            y: 840,
-            key: 'ball_6',
-            callback: () => {
-                // Switch to the game scene
-                this.scene.start('StartScene', { skin: 'ball_6' })
-            },
-            scale: 0.3,
-        })
-
-        const ball7 = new ClickableImage({
-            scene: this,
-            x: CANVAS_WIDTH / 2,
-            y: 970,
-            key: 'ball_7',
-            callback: () => {
-                // Switch to the game scene
-                this.scene.start('StartScene', { skin: 'ball_7' })
-            },
-            scale: 0.3,
-        })
-
-        const ball8 = new ClickableImage({
-            scene: this,
-            x: CANVAS_WIDTH / 2,
-            y: 1100,
-            key: 'ball_8',
-            callback: () => {
-                // Switch to the game scene
-                this.scene.start('StartScene', { skin: 'ball_8' })
-            },
-            scale: 0.3,
-        })
-
-        const ball9 = new ClickableImage({
-            scene: this,
-            x: CANVAS_WIDTH / 2,
-            y: 1230,
-            key: 'ball_9',
-            callback: () => {
-                // Switch to the game scene
-                this.scene.start('StartScene', { skin: 'ball_9' })
-            },
-            scale: 0.3,
-        })
-
-        const ball10 = new ClickableImage({
-            scene: this,
-            x: CANVAS_WIDTH / 2,
-            y: 1360,
-            key: 'ball_10',
-            callback: () => {
-                // Switch to the game scene
-                this.scene.start('StartScene', { skin: 'ball_10' })
-            },
-            scale: 0.3,
-        })
-
-        const ball11 = new ClickableImage({
-            scene: this,
-            x: CANVAS_WIDTH / 2,
-            y: 1490,
-            key: 'ball_11',
-            callback: () => {
-                // Switch to the game scene
-                this.scene.start('StartScene', { skin: 'ball_11' })
-            },
-            scale: 0.3,
-        })
-
-        const ball12 = new ClickableImage({
-            scene: this,
-            x: CANVAS_WIDTH / 2,
-            y: 1620,
-            key: 'ball_12',
-            callback: () => {
-                // Switch to the game scene
-                this.scene.start('StartScene', { skin: 'ball_12' })
-            },
-            scale: 0.3,
-        })
-
-        const ball_lock = new ClickableImage({
-            scene: this,
-            x: CANVAS_WIDTH / 2,
-            y: 1750,
-            key: 'ball_locked',
-            callback: () => {
-                // Switch to the game scene
-                this.scene.start('StartScene', { skin: 'ball_locked' })
-            },
-            scale: 0.3,
-        })
+    private purchase(name: string, price: number): boolean {
+        const curStar = parseInt(this.starText.text)
+        if (curStar > price) {
+            this.curBalls.push(name)
+            this.starText.text = (curStar - price).toString()
+            localStorage.setItem('balls', JSON.stringify(this.curBalls))
+            localStorage.setItem('star', this.starText.text)
+            return true
+        }
+        return false
     }
 }
