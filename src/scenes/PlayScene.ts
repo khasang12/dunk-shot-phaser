@@ -79,23 +79,17 @@ export default class PlayScene extends Phaser.Scene {
     public update(dt: number) {
         this.ball.update(dt)
         this.updateBackground()
-        if (this.ball.y > CANVAS_HEIGHT) {
-            this.onHitLowerBound()
-        }
+        if (this.ball.y > CANVAS_HEIGHT) this.onHitLowerBound()
+
         if (
             (this.ball.body?.velocity.y || 0) > 0 &&
             this.physics.collide(this.ball, this.curBasket.bodyGroup) &&
             this.ball.body?.touching.down
-        ) {
+        )
             this.onHitCurrentBasket()
-        }
 
-        if (
-            this.physics.overlap(this.ball, this.nextBasket.openGroup) &&
-            this.physics.collide(this.ball, this.nextBasket.bodyGroup)
-        ) {
-            this.onHitNextBasket()
-        }
+        if (this.physics.overlap(this.ball, this.nextBasket.openGroup)) this.onHitNextBasket()
+
         if (this.physics.collide(this.ball, this.nextBasket.bodyGroup)) this.onHitObstacle()
     }
 
@@ -387,6 +381,7 @@ export default class PlayScene extends Phaser.Scene {
             const temp = this.curBasket
             this.curBasket = this.nextBasket
             this.nextBasket = temp
+            this.curBasket.rotation = 0
         }
     }
 

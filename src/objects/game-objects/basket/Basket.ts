@@ -59,13 +59,11 @@ export default class Basket extends BodyObject {
         this.edgeRects = [
             this.scene.add.rectangle(this.x - 70, this.y - 25, 5, 5),
             this.scene.add.rectangle(this.x + 70, this.y - 25, 5, 5),
-            this.scene.add.rectangle(this.x + edge, this.y, edge, edge),
         ]
 
         this.openRects = [
             this.scene.add.rectangle(this.x - 25, this.y - 25, 20, 25),
             this.scene.add.rectangle(this.x + 25, this.y - 25, 20, 25),
-            this.scene.add.rectangle(this.x + edge, this.y, edge, edge),
         ]
 
         this.bodyGroup = this.scene.physics.add.group({
@@ -116,6 +114,7 @@ export default class Basket extends BodyObject {
     }
 
     private updateEdgeGroup() {
+        this.scene.physics.world.enable(this.edgeGroup)
         const alpha = getAngCoeff(this.width, this.height)
         const l = (getHypot(this.width, this.height) * this.scale) / 2
         this.edgeGroup.setX(
@@ -155,8 +154,8 @@ export default class Basket extends BodyObject {
             ease: 'Sine.easeInOut',
             onComplete: () => {
                 this.updateBodyGroup()
+                this.updateEdgeGroup()
                 if (edgeCollide) {
-                    this.updateEdgeGroup()
                     this.updateOpenGroup()
                 }
             },
@@ -175,14 +174,16 @@ export default class Basket extends BodyObject {
     }
 
     public onIdleEnter() {
-        this.setScale(this.scaleX, this.scaleX)
         this.setRotation(0)
+        this.updateEdgeGroup()
+        this.setScale(this.scaleX, this.scaleX)
     }
 
     public onSnipeEnter(data: number[]) {
         const [angle] = data
         this.rotation = angle - Math.PI / 2
         this.setScale(this.scaleX, Math.min(this.scaleY * 1.2, 0.9))
+        this.updateEdgeGroup()
     }
 
     public moveFollower(obj: Ball | Star | null) {

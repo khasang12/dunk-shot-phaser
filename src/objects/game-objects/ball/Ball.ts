@@ -12,7 +12,7 @@ export default class Ball extends BodyObject {
     private trajectory: Point[]
     public points: Phaser.GameObjects.Graphics
     public stateMachine: StateMachine
-    private emitter: Phaser.GameObjects.Particles.ParticleEmitter
+    private smokeParticle: Phaser.GameObjects.Particles.ParticleEmitter
 
     constructor(o: IGameObject) {
         super(o)
@@ -57,30 +57,34 @@ export default class Ball extends BodyObject {
     }
 
     public onIdleEnter(data: number[]) {
-        if (this.emitter) this.emitter.stop()
+        if (this.smokeParticle) this.smokeParticle.stop()
         if (data.length > 0) {
             const [x, y, score] = data
-            if (score && score % 5 == 0 && score > 0)
-                this.scene.time.delayedCall(1000, () => {
-                    this.powerUp = true
-                    this.emitter = this.scene.add.particles(0, 0, 'spark', {
-                        speed: 20,
-                        lifespan: 1500,
-                        quantity: 1,
-                        scale: { start: 1, end: 0 },
-                        emitting: false,
-                        emitZone: { type: 'random', source: this.getBounds(), quantity: 1 },
-                        duration: 0,
-                    })
-                    this.emitter.startFollow(this)
-                    this.emitter.start()
-                })
+            this.emitSmokeParticle()
+            if (score && score % 5 == 0 && score > 0) {
+                this.powerUp = true
+            }
             this.setX(x)
             this.setY(y)
             this.setVelocity(0, 0)
             this.disableBody(true, false)
             this.isMoving = false
         }
+    }
+
+    private emitSmokeParticle(): void {
+        this.smokeParticle = this.scene.add.particles(100, 100, 'dot', {
+            color: [0x696969, 0x808080, 0xa9a9a9, 0xf5f5f5],
+            alpha: { start: 0.9, end: 0.1, ease: 'sine.easeout' },
+            angle: { min: 0, max: 360 },
+            rotate: { min: 0, max: 360 },
+            speed: { min: 40, max: 70 },
+            colorEase: 'quad.easeinout',
+            lifespan: 1500,
+            scale: 0.4,
+            frequency: 60,
+        })
+        this.smokeParticle.startFollow(this, -90, -120, true)
     }
 
     public onDemoUpdate(delta: number) {
@@ -150,11 +154,11 @@ export default class Ball extends BodyObject {
         this.points.destroy()
     }
 
-    public isPowerUp(){
+    public isPowerUp() {
         return this.powerUp
     }
 
-    public disablePowerUp(){
+    public disablePowerUp() {
         this.powerUp = false
     }
 }
