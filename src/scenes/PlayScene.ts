@@ -1,12 +1,13 @@
 import { CANVAS_HEIGHT, CANVAS_WIDTH } from '../constants'
-import Ball from '../objects/game-objects/Ball'
-import Basket from '../objects/game-objects/Basket'
+import Ball from '../objects/game-objects/ball/Ball'
+import Basket from '../objects/game-objects/basket/Basket'
 import Star from '../objects/game-objects/Star'
 import Background from '../objects/images/Background'
 import ClickableImage from '../objects/images/ClickableImage'
 import Image from '../objects/images/Image'
 import FpsText from '../objects/texts/FpsText'
 import { Text } from '../objects/texts/Text'
+import StateMachine from '../states/StateMachine'
 import { Point } from '../types/point'
 import { Sound } from '../types/sound'
 
@@ -42,6 +43,7 @@ export default class PlayScene extends Phaser.Scene {
     private dragStart: Point | null
     private lineGroupBounds: Phaser.Physics.Arcade.Group
     private lineGroupUpperBounds: Phaser.Physics.Arcade.Group
+    private stateMachine: StateMachine
 
     constructor() {
         super({ key: 'PlayScene' })
@@ -74,7 +76,8 @@ export default class PlayScene extends Phaser.Scene {
         this.createEventListeners()
     }
 
-    public update() {
+    public update(dt: number) {
+        this.ball.update(dt)
         this.updateBackground()
         if (this.ball.y > CANVAS_HEIGHT) {
             this.emitHitLowerBoundEvent()
@@ -99,23 +102,31 @@ export default class PlayScene extends Phaser.Scene {
         if (this.dragStart) {
             const [velocity, angle] = this.estimateVelocityAndAngle(pointer)
             this.curBasket.setScale(this.curBasket.scaleX, this.curBasket.scaleX)
-            this.ball.fly(this.curBasket.x, this.curBasket.y, angle + Math.PI, velocity)
+            this.ball.stateMachine.setState(
+                'fly',
+                this.curBasket.x,
+                this.curBasket.y,
+                angle + Math.PI,
+                velocity
+            )
             this.dragStart = null
             this.shootAudio.play()
             this.curBasket.setRotation(0)
-            if (this.ball.points) this.ball.points.destroy()
         }
     }
 
     private onPointerMove(pointer: Phaser.Input.Pointer) {
         if (pointer.isDown) {
-            if (this.ball.points) this.ball.points.destroy()
             const [velocity, angle] = this.estimateVelocityAndAngle(pointer)
             this.curBasket.rotation = angle - Math.PI / 2
-            this.ball.setTrajectory(velocity, Math.PI / 2 - this.curBasket.rotation)
             this.curBasket.setScale(
                 this.curBasket.scaleX,
                 Math.min(this.curBasket.scaleY * 1.2, 0.9)
+            )
+            this.ball.stateMachine.setState(
+                'snipe',
+                velocity,
+                Math.PI / 2 - this.curBasket.rotation
             )
         }
     }
@@ -274,7 +285,7 @@ export default class PlayScene extends Phaser.Scene {
             y: CANVAS_HEIGHT / 2 + 200,
             key: 'basket',
             callback: (x: number, y: number, angle: number, speed: number) => {
-                this.ball.fly(x, y, angle, speed)
+                this.ball.stateMachine.setState('fly', x, y, angle, speed)
             },
             scale: 0.65,
         })
@@ -287,7 +298,7 @@ export default class PlayScene extends Phaser.Scene {
             y: CANVAS_HEIGHT / 2 - 200,
             key: 'basket',
             callback: (x: number, y: number, angle: number, speed: number) => {
-                this.ball.fly(x, y, angle, speed)
+                this.ball.stateMachine.setState('fly', x, y, angle, speed)
             },
             scale: 0.65,
         })
@@ -301,7 +312,8 @@ export default class PlayScene extends Phaser.Scene {
             key: 'ball',
             scale: 0.12,
         }).setDepth(1)
-        if (data) this.ball.changeSkin(data.skin)
+
+        if (data) this.ball.setTexture(data.skin)
     }
 
     private createEventListeners() {
@@ -317,7 +329,6 @@ export default class PlayScene extends Phaser.Scene {
     }
 
     private updateBackground() {
-        if (this.ball.getIsMoving()) this.ball.rotation += 0.1
         this.fps.update()
         this.background.tilePositionY -= 1
         this.cameras.main.setScroll(this.cameras.main.scrollX, this.ball.y - this.curBasket.y)
@@ -332,7 +343,7 @@ export default class PlayScene extends Phaser.Scene {
 
     private emitHitCurrentBasketEvent() {
         this.curBasket.reset()
-        this.ball.resetPosition(this.curBasket.x, this.curBasket.y)
+        this.ball.stateMachine.setState('idle', this.curBasket.x, this.curBasket.y)
         this.netAudio.play()
     }
 
@@ -356,7 +367,7 @@ export default class PlayScene extends Phaser.Scene {
 
             this.incScoreText.emitTextFadeInOut(this.nextBasket.x, this.nextBasket.y, 1000)
             this.curScoreText.text = this.score.toString()
-            this.ball.resetPosition(this.nextBasket.x, this.nextBasket.y)
+            this.ball.stateMachine.setState('idle', this.nextBasket.x, this.nextBasket.y)
             this.curBasket.resetPosition(this.star)
             this.nextBasket.resetPosition(this.ball)
 

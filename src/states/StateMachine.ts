@@ -1,47 +1,93 @@
-import { deepCopy } from '../utils/object'
-import BaseState from './BaseState'
+import { IState } from '../types/state'
+
+let idCount = 0
 
 export default class StateMachine {
-    private state: string
-    private initialState: string
-    private possibleStates: Map<string, BaseState>
-    private stateArgs: [Phaser.Scene, Phaser.Physics.Arcade.Sprite]
+    private states = new Map<string, IState>()
+    private currentState?: IState
+    private id = (++idCount).toString()
+    private context?: object
+    private isChangingState = false
+    private changeStateQueue: string[]
 
-    constructor(
-        initialState: string,
-        possibleStates: Map<string, BaseState>,
-        stateArgs: [Phaser.Scene, Phaser.Physics.Arcade.Sprite]
+    constructor(context?: object, id?: string) {
+        this.id = id ?? this.id
+        this.context = context
+        this.changeStateQueue = []
+    }
+
+    addState(
+        name: string,
+        config?: {
+            onEnter?: (args: number[]) => void
+            onUpdate?: (dt: number, args?: number[]) => void
+            onExit?: () => void
+        }
     ) {
-        this.initialState = initialState
-        this.possibleStates = possibleStates
-        this.stateArgs = stateArgs
-        this.state = ''
+        // add a new State
+        const context = this.context
 
-        // State instances get access to the state machine via this.stateMachine.
-        for (const state of Object.values(this.possibleStates)) {
-            state.stateMachine = this
-        }
+        this.states.set(name, {
+            name,
+            onEnter: config?.onEnter?.bind(context),
+            onUpdate: config?.onUpdate?.bind(context),
+            onExit: config?.onExit?.bind(context),
+        })
+
+        return this
     }
 
-    public step() {
-        // On the first step, the state is null and we need to initialize the first state.
-        if (this.state === '') {
-            this.state = this.initialState
-            this.possibleStates
-                .get(this.state)
-                ?.enter(deepCopy(this.stateArgs[0]), deepCopy(this.stateArgs[1]))
+    setState(name: string, ...args: number[]) {
+        // switch to State called `name`
+        if (!this.states.has(name)) {
+            console.warn(`Tried to change to unknown state: ${name}`)
+            return
         }
 
-        // Run the current state's execute
-        this.possibleStates
-            .get(this.state)
-            ?.execute(deepCopy(this.stateArgs[0]), deepCopy(this.stateArgs[1]))
+        if (this.isChangingState) {
+            this.changeStateQueue.push(name)
+            console.log(
+                `[StateMachine (${this.id})] change from ${
+                    this.currentState?.name ?? 'none'
+                } to ${name}`
+            )
+            return
+        }
+
+        this.isChangingState = true
+
+        
+
+        if (this.currentState && this.currentState.onExit) {
+            this.currentState.onExit()
+        }
+
+        this.currentState = <IState>this.states.get(name)
+
+        if (this.currentState.onEnter) {
+            this.currentState.onEnter(args)
+        }
+
+        this.isChangingState = false
     }
 
-    public transition(newState: string) {
-        this.state = newState
-        this.possibleStates
-            .get(this.state)
-            ?.enter(deepCopy(this.stateArgs[0]), deepCopy(this.stateArgs[1]))
+    isCurrentState(name: string) {
+        if (!this.currentState) {
+            return false
+        }
+
+        return this.currentState.name === name
+    }
+
+    update(dt: number) {
+        // update current state if exists
+        if (this.changeStateQueue.length > 0) {
+            this.setState(<string> this.changeStateQueue.shift())
+            return
+        }
+
+        if (this.currentState && this.currentState.onUpdate) {
+            this.currentState.onUpdate(dt)
+        }
     }
 }

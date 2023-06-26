@@ -1,5 +1,5 @@
-import { CANVAS_HEIGHT, CANVAS_WIDTH } from '../../constants'
-import { IGameObject } from '../../types/object'
+import { CANVAS_HEIGHT, CANVAS_WIDTH } from '../../../constants'
+import { IGameObject } from '../../../types/object'
 import {
     getAngCoeff,
     getHypot,
@@ -7,10 +7,10 @@ import {
     getProjectY,
     randomAngle,
     randomIntegerInRange,
-} from '../../utils/math'
-import Ball from './Ball'
-import BodyObject from './BodyObject'
-import Star from './Star'
+} from '../../../utils/math'
+import Ball from '../ball/Ball'
+import BodyObject from '../BodyObject'
+import Star from '../Star'
 
 export default class Basket extends BodyObject {
     public bodyGroup: Phaser.Physics.Arcade.Group

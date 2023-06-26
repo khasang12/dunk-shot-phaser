@@ -1,5 +1,5 @@
 import { CANVAS_HEIGHT, CANVAS_WIDTH } from '../constants'
-import Ball from '../objects/game-objects/Ball'
+import Ball from '../objects/game-objects/ball/Ball'
 import Button from '../objects/buttons/Button'
 import ClickableImage from '../objects/images/ClickableImage'
 import Image from '../objects/images/Image'
@@ -73,8 +73,15 @@ export default class StartScene extends Phaser.Scene {
             key: 'basket',
             scale: 0.5 * 1.5,
             callback: () => {
-                if (data.skin) this.scene.start('PlayScene', data)
-                else this.scene.start('PlayScene', { skin: 'ball' })
+                this.cameras.main.fadeOut(500, 0, 0, 0)
+                this.cameras.main.once(
+                    Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE,
+                    () => {
+                        if (data.skin) this.scene.start('PlayScene', data)
+                        else this.scene.start('PlayScene', { skin: 'ball' })
+                    }
+                )
+                
             },
         }).setDepth(2)
         const basket2Img = new Image({
@@ -94,6 +101,7 @@ export default class StartScene extends Phaser.Scene {
         }).setDepth(1)
         if (data.skin) this.ball.setTexture(data.skin)
         else this.ball.setTexture('ball')
+        this.ball.stateMachine.setState('demo')
 
         const dragBtn = new ClickableImage({
             scene: this,
@@ -101,8 +109,11 @@ export default class StartScene extends Phaser.Scene {
             y: CANVAS_HEIGHT - 90,
             key: 'drag-it',
             callback: () => {
-                if (data.skin) this.scene.start('PlayScene', data)
-                else this.scene.start('PlayScene', { skin: 'ball' })
+                this.cameras.main.fadeOut(500, 0, 0, 0)
+                this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+                    if (data.skin) this.scene.start('PlayScene', data)
+                    else this.scene.start('PlayScene', { skin: 'ball' })
+                })
             },
             scale: 0.3 * 1.5,
         })
@@ -146,6 +157,6 @@ export default class StartScene extends Phaser.Scene {
     }
 
     public update(time: number, delta: number) {
-        this.ball.flyDemo(time, delta)
+        this.ball.update(delta)
     }
 }
