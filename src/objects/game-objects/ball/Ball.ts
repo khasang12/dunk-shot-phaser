@@ -11,6 +11,7 @@ export default class Ball extends BodyObject {
     private trajectory: Point[]
     public points: Phaser.GameObjects.Graphics
     public stateMachine: StateMachine
+    private emitter: Phaser.GameObjects.Particles.ParticleEmitter
 
     constructor(o: IGameObject) {
         super(o)
@@ -52,10 +53,23 @@ export default class Ball extends BodyObject {
     public update(dt: number) {
         this.stateMachine.update(dt)
     }
-    
+
     public onIdleEnter(data: number[]) {
         if (data.length > 0) {
-            const [x, y] = data
+            const [x, y, score] = data
+            if (score && score % 5 == 0 && score > 0)
+                this.scene.time.delayedCall(1000, () => {
+                    this.emitter = this.scene.add.particles(0, 0, 'spark', {
+                        speed: 20,
+                        lifespan: 1500,
+                        quantity: 1,
+                        scale: { start: 1, end: 0 },
+                        emitting: false,
+                        emitZone: { type: 'random', source: this.getBounds(), quantity: 1 },
+                        duration: 0,
+                    })
+                    this.emitter.start()
+                })
             this.setX(x)
             this.setY(y)
             this.setVelocity(0, 0)
@@ -93,6 +107,7 @@ export default class Ball extends BodyObject {
     }
 
     public onFlyEnter(data: number[]) {
+        if (this.emitter) this.emitter.stop()
         const [x, y, angle, speed] = data
         if (speed > 0) {
             this.isMoving = true

@@ -1,5 +1,5 @@
-import { IGameObject } from '../../types/object'
-import BodyObject from './BodyObject'
+import { IGameObject } from '../../../types/object'
+import BodyObject from '../BodyObject'
 
 export default class Star extends BodyObject {
     constructor(o: IGameObject) {

@@ -54,6 +54,7 @@
   },
   "dependencies": {
     "gh-pages": "^5.0.0",
-    "phaser": "^3.60.0"
+    "phaser": "^3.60.0",
+    "regenerator-runtime": "^0.13.11"
   }
 }

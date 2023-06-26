@@ -8,7 +8,6 @@ import { CANVAS_HEIGHT, CANVAS_WIDTH } from './constants'
 import SettingScene from './scenes/SettingScene'
 import CustomizeScene from './scenes/CustomizeScene'
 
-
 export const config = {
     type: Phaser.AUTO,
     parent: 'game',
@@ -21,11 +20,19 @@ export const config = {
         width: CANVAS_WIDTH,
         height: CANVAS_HEIGHT,
     },
-    scene: [PreloadScene, StartScene, PlayScene, PauseScene, GameOverScene, SettingScene, CustomizeScene],
+    scene: [
+        PreloadScene,
+        StartScene,
+        PlayScene,
+        PauseScene,
+        GameOverScene,
+        SettingScene,
+        CustomizeScene,
+    ],
     physics: {
         default: 'arcade',
         arcade: {
-            debug: true,
+            debug: false,
             gravity: { y: 980 },
         },
     },

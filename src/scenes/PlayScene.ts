@@ -1,7 +1,7 @@
 import { CANVAS_HEIGHT, CANVAS_WIDTH } from '../constants'
 import Ball from '../objects/game-objects/ball/Ball'
 import Basket from '../objects/game-objects/basket/Basket'
-import Star from '../objects/game-objects/Star'
+import Star from '../objects/game-objects/star/Star'
 import Background from '../objects/images/Background'
 import ClickableImage from '../objects/images/ClickableImage'
 import Image from '../objects/images/Image'
@@ -35,6 +35,7 @@ export default class PlayScene extends Phaser.Scene {
     private nextBasket: Basket
     private ball: Ball
     private star: Star
+    private vision: Phaser.GameObjects.Image
 
     // Game Controller Variables
     private score: number
@@ -77,20 +78,24 @@ export default class PlayScene extends Phaser.Scene {
     }
 
     public update(dt: number) {
+        if (this.vision) {
+            this.vision.x = this.ball.x
+            this.vision.y = this.ball.y
+        }
         this.ball.update(dt)
         this.updateBackground()
         if (this.ball.y > CANVAS_HEIGHT) {
-            this.emitHitLowerBoundEvent()
+            this.onHitLowerBound()
         }
         if (
             (this.ball.body?.velocity.y || 0) > 0 &&
             this.physics.collide(this.ball, this.curBasket.bodyGroup) &&
             this.ball.body?.touching.down
         ) {
-            this.emitHitCurrentBasketEvent()
+            this.onHitCurrentBasket()
         }
         if (this.physics.collide(this.ball, this.nextBasket.bodyGroup)) {
-            this.emitHitNextBasketEvent()
+            this.onHitNextBasket()
         }
     }
 
@@ -101,7 +106,8 @@ export default class PlayScene extends Phaser.Scene {
     private onPointerUp(pointer: Phaser.Input.Pointer) {
         if (this.dragStart) {
             const [velocity, angle] = this.estimateVelocityAndAngle(pointer)
-            this.curBasket.setScale(this.curBasket.scaleX, this.curBasket.scaleX)
+            this.curBasket.stateMachine.setState('idle')
+            
             this.ball.stateMachine.setState(
                 'fly',
                 this.curBasket.x,
@@ -111,18 +117,13 @@ export default class PlayScene extends Phaser.Scene {
             )
             this.dragStart = null
             this.shootAudio.play()
-            this.curBasket.setRotation(0)
         }
     }
 
     private onPointerMove(pointer: Phaser.Input.Pointer) {
         if (pointer.isDown) {
             const [velocity, angle] = this.estimateVelocityAndAngle(pointer)
-            this.curBasket.rotation = angle - Math.PI / 2
-            this.curBasket.setScale(
-                this.curBasket.scaleX,
-                Math.min(this.curBasket.scaleY * 1.2, 0.9)
-            )
+            this.curBasket.stateMachine.setState('snipe', angle)
             this.ball.stateMachine.setState(
                 'snipe',
                 velocity,
@@ -334,25 +335,32 @@ export default class PlayScene extends Phaser.Scene {
         this.cameras.main.setScroll(this.cameras.main.scrollX, this.ball.y - this.curBasket.y)
     }
 
-    private emitHitLowerBoundEvent() {
+    private onHitLowerBound() {
         this.gameOverAudio.play()
         this.scene.start('GameOverScene', { data: this.score })
         this.saveScore()
         this.isGameEnd = true
     }
 
-    private emitHitCurrentBasketEvent() {
+    private onHitCurrentBasket() {
         this.curBasket.reset()
         this.ball.stateMachine.setState('idle', this.curBasket.x, this.curBasket.y)
         this.netAudio.play()
     }
 
-    private emitHitNextBasketEvent() {
+    private onHitNextBasket() {
         if (this.ball.body) {
             const veloAngle = Math.atan2(this.ball.body?.velocity.y, this.ball.body?.velocity.x)
             this.netAudio.play()
+            this.score += 1
+            this.ball.stateMachine.setState(
+                'idle',
+                this.nextBasket.x,
+                this.nextBasket.y,
+                this.score
+            )
             if (this.nextBasket.rotation - -veloAngle <= 0.15) {
-                this.score += 2
+                this.score += 1
                 this.perfectText.emitTextFadeInOut(this.nextBasket.x, this.nextBasket.y - 50, 1000)
                 this.incScoreText.setText('+2')
                 if (Math.abs(this.ball.getBounds().centerX - this.star.getBounds().centerX) < 50) {
@@ -361,15 +369,15 @@ export default class PlayScene extends Phaser.Scene {
                     this.scoreText.text = this.starCnt.toString()
                 }
             } else {
-                this.score += 1
                 this.incScoreText.setText('+1')
             }
 
             this.incScoreText.emitTextFadeInOut(this.nextBasket.x, this.nextBasket.y, 1000)
             this.curScoreText.text = this.score.toString()
-            this.ball.stateMachine.setState('idle', this.nextBasket.x, this.nextBasket.y)
-            this.curBasket.resetPosition(this.star)
-            this.nextBasket.resetPosition(this.ball)
+            this.curBasket.stateMachine.setState('transit')
+            this.nextBasket.stateMachine.setState('transit')
+            this.curBasket.resetPositionByBasketPosition(this.star)
+            this.nextBasket.resetPositionByBasketPosition(this.ball)
 
             const temp = this.curBasket
             this.curBasket = this.nextBasket

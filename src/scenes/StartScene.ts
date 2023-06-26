@@ -119,22 +119,10 @@ export default class StartScene extends Phaser.Scene {
         })
         dragBtn.enableOscillator()
 
-        const freeGiftBtn = new Button({
-            scene: this,
-            x: CANVAS_WIDTH - 190,
-            y: CANVAS_HEIGHT - 260,
-            key: 'free-gift',
-            text: 'FREE GIFT!',
-            scale: 0.3 * 1.5,
-            callback: () => {
-                console.log('free gift')
-            },
-        })
-
         const customizeBtn = new Button({
             scene: this,
             x: CANVAS_WIDTH - 190,
-            y: CANVAS_HEIGHT - 160,
+            y: CANVAS_HEIGHT - 190,
             key: 'customize',
             text: '',
             scale: 0.2 * 1.5,

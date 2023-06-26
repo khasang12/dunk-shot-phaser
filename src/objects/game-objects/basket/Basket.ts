@@ -1,4 +1,5 @@
 import { CANVAS_HEIGHT, CANVAS_WIDTH } from '../../../constants'
+import StateMachine from '../../../states/StateMachine'
 import { IGameObject } from '../../../types/object'
 import {
     getAngCoeff,
@@ -10,9 +11,10 @@ import {
 } from '../../../utils/math'
 import Ball from '../ball/Ball'
 import BodyObject from '../BodyObject'
-import Star from '../Star'
+import Star from '../star/Star'
 
 export default class Basket extends BodyObject {
+    public stateMachine: StateMachine
     public bodyGroup: Phaser.Physics.Arcade.Group
     public edgeGroup: Phaser.Physics.Arcade.Group
     public edgeRects: Phaser.GameObjects.Rectangle[]
@@ -26,6 +28,21 @@ export default class Basket extends BodyObject {
 
         this.disableBody(true, false)
         this.scene.add.existing(this)
+
+        this.stateMachine = new StateMachine(this, 'ball')
+
+        this.stateMachine
+            .addState('idle', {
+                onEnter: this.onIdleEnter,
+            })
+            .addState('snipe', {
+                onEnter: this.onSnipeEnter,
+            })
+            .addState('transit', {
+                onEnter: this.onTransitEnter,
+            })
+
+        this.stateMachine.setState('idle')
     }
 
     private createMultiBody() {
@@ -115,16 +132,31 @@ export default class Basket extends BodyObject {
         })
     }
 
-    public resetPosition(obj: Ball | Star | null) {
-        const [W, H] = [CANVAS_WIDTH, CANVAS_HEIGHT]
+    public onTransitEnter() {
+        const [_W, H] = [CANVAS_WIDTH, CANVAS_HEIGHT]
         const newY =
             this.y > H / 2
                 ? randomIntegerInRange(200, H / 2 - 200)
                 : randomIntegerInRange(H / 2, H - 100)
-
+        this.y = newY
         this.transition(this, this.x, newY, true)
+    }
+
+    public onIdleEnter() {
+        this.setScale(this.scaleX, this.scaleX)
+        this.setRotation(0)
+    }
+
+    public onSnipeEnter(data: number[]) {
+        const [angle] = data
+        this.rotation = angle - Math.PI / 2
+        this.setScale(this.scaleX, Math.min(this.scaleY * 1.2, 0.9))
+    }
+
+    public resetPositionByBasketPosition(obj: Ball | Star | null) {
+        const [W, _H] = [CANVAS_WIDTH, CANVAS_HEIGHT]
         if (obj instanceof Ball) {
-            this.transition(obj, this.x, newY, false)
+            this.transition(obj, this.x, this.y, false)
         } else if (obj instanceof Star) {
             if (this.x > W / 2) {
                 this.setRotation(-randomAngle() / 2)
@@ -134,7 +166,7 @@ export default class Basket extends BodyObject {
             this.transition(
                 obj,
                 this.x + getProjectX(80, Math.PI / 2 - this.rotation),
-                newY - getProjectY(80, Math.PI / 2 - this.rotation),
+                this.y - getProjectY(80, Math.PI / 2 - this.rotation),
                 false
             )
             obj.setAlpha(1)

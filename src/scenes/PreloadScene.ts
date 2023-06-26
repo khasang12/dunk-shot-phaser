@@ -140,6 +140,9 @@ export default class PreloadScene extends Phaser.Scene {
         this.load.image('logo', 'logo.png')
         this.load.image('net', 'net.png')
         this.load.image('star', 'star.png')
+        this.load.image('shadow', 'shadow.png')
+        this.load.image('flare', 'flare.png')
+        this.load.image('spark', 'spark.png')
     }
 
     private preloadThemes(): void {

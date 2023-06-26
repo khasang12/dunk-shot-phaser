@@ -1,5 +1,6 @@
 import { CANVAS_WIDTH } from '../constants'
 import ClickableImage from '../objects/images/ClickableImage'
+import { Text } from '../objects/texts/Text'
 import { Point } from '../types/point'
 
 export default class CustomizeScene extends Phaser.Scene {
@@ -23,6 +24,14 @@ export default class CustomizeScene extends Phaser.Scene {
             // Save the current mouse position for the next frame
             this.lastPointer.x = pointer.x
             this.lastPointer.y = pointer.y
+        })
+
+        const settingsText = new Text({
+            scene: this,
+            x: CANVAS_WIDTH / 2,
+            y: 50,
+            msg: 'CHOOSE A BALL',
+            style: { fontFamily: 'MilkyHoney', fontSize: '45px', color: '#ababab' },
         })
 
         const ball1 = new ClickableImage({

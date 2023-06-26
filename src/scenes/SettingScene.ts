@@ -28,7 +28,7 @@ export default class SettingScene extends Phaser.Scene {
             callback: () => {
                 this.scene.start(data.data)
             },
-            scale: 0.2 * 1.5,
+            scale: 0.4,
         })
 
         const settingsText = new Text({
