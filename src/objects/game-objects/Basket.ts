@@ -1,4 +1,4 @@
-import { CANVAS_HEIGHT, CANVAS_WIDTH } from '../../constants'
+import { BASKET_EFFECTS, CANVAS_HEIGHT, CANVAS_WIDTH, SPEED_LIMIT } from '../../constants'
 import StateMachine from '../../states/StateMachine'
 import { IGameObject } from '../../types/object'
 import {
@@ -21,6 +21,9 @@ export default class Basket extends BodyObject {
     public edgeRects: Phaser.GameObjects.Rectangle[]
     public openRects: Phaser.GameObjects.Rectangle[]
     public bodyRects: Phaser.GameObjects.Rectangle[]
+    private tweensX: Phaser.Tweens.Tween
+    private tweensY: Phaser.Tweens.Tween
+    private tweensAngle: Phaser.Tweens.Tween
 
     constructor(o: IGameObject) {
         super(o)
@@ -122,7 +125,8 @@ export default class Basket extends BodyObject {
         obj: Phaser.Physics.Arcade.Sprite,
         destX: number,
         destY: number,
-        edgeCollide: boolean
+        edgeCollide: boolean,
+        effect?: number
     ) {
         this.scene.tweens.add({
             targets: obj,
@@ -135,6 +139,9 @@ export default class Basket extends BodyObject {
                 this.updateEdgeGroup()
                 if (edgeCollide) {
                     this.updateOpenGroup()
+                    if (effect == BASKET_EFFECTS['ROTATE']) this.addRotating()
+                    else if (effect == BASKET_EFFECTS['MOVE_X']) this.addMovingX()
+                    else if (effect == BASKET_EFFECTS['MOVE_Y']) this.addMovingY()
                 }
             },
         })
@@ -142,25 +149,28 @@ export default class Basket extends BodyObject {
 
     public onTransitEnter(data: number[]) {
         const [_W, H] = [CANVAS_WIDTH, CANVAS_HEIGHT]
-        const [state] = data
+        const [state, effect] = data
         const newY =
             this.y > H / 2
                 ? randomIntegerInRange(200, H / 2 - 200)
                 : randomIntegerInRange(H / 2, H - 100)
         this.y = newY
-        this.transition(this, this.x, newY, state == 1 ? true : false)
+        this.transition(this, this.x, newY, state == 1 ? true : false, effect)
     }
 
     public onIdleEnter() {
-        this.setRotation(0)
+        this.clearEffect()
         this.updateEdgeGroup()
         this.setScale(this.scaleX, this.scaleX)
     }
 
     public onSnipeEnter(data: number[]) {
-        const [angle] = data
+        const [velocity, angle] = data
         this.rotation = angle - Math.PI / 2
-        this.setScale(this.scaleX, Math.min(this.scaleY * 1.2, 0.9))
+        this.setScale(
+            this.scaleX,
+            Math.max((this.scaleX * 2 * Math.min(velocity, SPEED_LIMIT)) / SPEED_LIMIT, this.scaleX)
+        )
         this.updateEdgeGroup()
     }
 
@@ -168,6 +178,7 @@ export default class Basket extends BodyObject {
         const [W, _H] = [CANVAS_WIDTH, CANVAS_HEIGHT]
         if (obj instanceof Ball) {
             this.transition(obj, this.x, this.y, false)
+            this.clearEffect()
         } else if (obj instanceof Star) {
             if (this.x > W / 2) {
                 this.setRotation(-randomAngle() / 2)
@@ -208,5 +219,59 @@ export default class Basket extends BodyObject {
             yoyo: true,
             repeat: 3,
         })
+    }
+
+    public addMovingX() {
+        this.tweensX = this.scene.tweens.add({
+            targets: this,
+            x: this.x - 25, // Destination position of the object
+            duration: 1000, // Duration of the animation in milliseconds
+            ease: 'Power1',
+            yoyo: true, // Make the tween repeat back and forth
+            repeat: -1, // Repeat the tween indefinitely
+            onUpdate: () => {
+                this.updateBodyGroup()
+                this.updateEdgeGroup()
+                this.updateOpenGroup()
+            },
+        })
+    }
+
+    public addMovingY() {
+        this.tweensY = this.scene.tweens.add({
+            targets: this,
+            y: this.y + 30,
+            duration: 1000, // Duration of the animation in milliseconds
+            ease: 'Power1',
+            yoyo: true, // Make the tween repeat back and forth
+            repeat: -1, // Repeat the tween indefinitely
+            onUpdate: () => {
+                this.updateBodyGroup()
+                this.updateEdgeGroup()
+                this.updateOpenGroup()
+            },
+        })
+    }
+
+    public addRotating() {
+        this.tweensAngle = this.scene.tweens.add({
+            targets: this,
+            angle: Phaser.Math.Between(-45, 45),
+            duration: 1000, // Duration of the animation in milliseconds
+            ease: 'Linear',
+            yoyo: true, // Make the tween repeat back and forth
+            repeat: -1, // Repeat the tween indefinitely
+            onUpdate: () => {
+                this.updateBodyGroup()
+                this.updateEdgeGroup()
+                this.updateOpenGroup()
+            },
+        })
+    }
+
+    public clearEffect() {
+        if (this.tweensX) this.tweensX.stop()
+        if (this.tweensY) this.tweensY.stop()
+        if (this.tweensAngle) this.tweensAngle.stop()
     }
 }

@@ -33,8 +33,7 @@ export const config = {
     physics: {
         default: 'arcade',
         arcade: {
-            debug: true,
-            gravity: { y: 980 },
+            debug: false
         },
     },
 }

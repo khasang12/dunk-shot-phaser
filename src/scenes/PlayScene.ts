@@ -1,4 +1,4 @@
-import { CANVAS_HEIGHT, CANVAS_WIDTH } from '../constants'
+import { BASKET_EFFECTS, CANVAS_HEIGHT, CANVAS_WIDTH } from '../constants'
 import { gameManager } from '../game'
 import Ball from '../objects/game-objects/Ball'
 import Basket from '../objects/game-objects/Basket'
@@ -64,7 +64,7 @@ export default class PlayScene extends Phaser.Scene {
     public update(dt: number) {
         this.ball.update(dt)
         this.updateBackground()
-        if (this.ball.y > this.curBasket.y + 20) {
+        if (this.ball.y > CANVAS_HEIGHT) {
             this.onHitLowerBound()
         }
 
@@ -86,16 +86,8 @@ export default class PlayScene extends Phaser.Scene {
 
     private onPointerUp(pointer: Phaser.Input.Pointer) {
         if (this.dragStart) {
-            const [velocity, angle] = estimateVelocityAndAngle(this.dragStart, pointer)
             this.curBasket.stateMachine.setState('idle')
-
-            this.ball.stateMachine.setState(
-                'fly',
-                this.curBasket.x,
-                this.curBasket.y,
-                angle + Math.PI,
-                velocity
-            )
+            this.ball.stateMachine.setState('fly', this.curBasket.x, this.curBasket.y)
             this.dragStart = null
             this.shootAudio.play()
         }
@@ -104,7 +96,7 @@ export default class PlayScene extends Phaser.Scene {
     private onPointerMove(pointer: Phaser.Input.Pointer) {
         if (pointer.isDown && this.dragStart) {
             const [velocity, angle] = estimateVelocityAndAngle(this.dragStart, pointer)
-            this.curBasket.stateMachine.setState('snipe', angle)
+            this.curBasket.stateMachine.setState('snipe', velocity, angle)
             this.ball.stateMachine.setState(
                 'snipe',
                 velocity,
@@ -321,7 +313,6 @@ export default class PlayScene extends Phaser.Scene {
                 this.nextBasket.y,
                 gameManager.getScoreManager().getCurScore()
             )
-            if (this.ball.isPowerUp()) bonus += 1
             if (this.nextBasket.rotation - -veloAngle <= 0.2) {
                 bonus += 1
                 this.perfectText.emitTextFadeInOut(this.nextBasket.x, this.nextBasket.y - 50, 1000)
@@ -331,20 +322,38 @@ export default class PlayScene extends Phaser.Scene {
                     this.scoreText.setText(gameManager.getScoreManager().getCurStar().toString())
                 }
             }
+            if (this.ball.isPowerUp()) {
+                this.cameras.main.flash()
+                bonus += 1
+                this.ball.disableSmoke()
+            }
             this.incScoreText.setText('+' + bonus.toString())
             this.ball.disablePowerUp()
             gameManager.getScoreManager().incrementScore(bonus)
             this.incScoreText.emitTextFadeInOut(this.nextBasket.x, this.nextBasket.y, 1000)
-            this.curScoreText.text = gameManager.getScoreManager().getCurScore().toString()
-            this.curBasket.stateMachine.setState('transit', 1)
-            this.nextBasket.stateMachine.setState('transit', 0)
-            this.curBasket.moveFollower(this.star)
-            this.nextBasket.moveFollower(this.ball)
-
-            const temp = this.curBasket
-            this.curBasket = this.nextBasket
-            this.nextBasket = temp
-            this.curBasket.rotation = 0
+            const curScore = gameManager.getScoreManager().getCurScore()
+            this.curScoreText.text = curScore.toString()
+            if (curScore % 5 == 0 && curScore > 0) this.ball.emitSmokeParticle()
+            this.updateBaskets(curScore)
         }
+    }
+
+    private updateBaskets(curScore: number) {
+        if (curScore >= 15)
+            this.curBasket.stateMachine.setState('transit', 1, BASKET_EFFECTS['ROTATE'])
+        else if (curScore >= 10)
+            this.curBasket.stateMachine.setState('transit', 1, BASKET_EFFECTS['MOVE_X'])
+        else if (curScore >= 5)
+            this.curBasket.stateMachine.setState('transit', 1, BASKET_EFFECTS['MOVE_Y'])
+        else this.curBasket.stateMachine.setState('transit', 1)
+
+        this.nextBasket.stateMachine.setState('transit', 0)
+        this.curBasket.moveFollower(this.star)
+        this.nextBasket.moveFollower(this.ball)
+
+        const temp = this.curBasket
+        this.curBasket = this.nextBasket
+        this.nextBasket = temp
+        this.curBasket.rotation = 0
     }
 }

@@ -1,3 +1,4 @@
+import { SCENE_KEYS } from '../constants'
 import GameStateMachine from '../states/GameStateMachine'
 
 export default class SceneManager {
@@ -45,30 +46,30 @@ export default class SceneManager {
     }
 
     public onPlayEnter(scene: Phaser.Scene, msg?: Object) {
-        scene.scene.start('PlayScene', msg)
+        scene.scene.start(SCENE_KEYS['PLAY'], msg)
     }
 
     public onCustomizeEnter(scene: Phaser.Scene) {
-        scene.scene.start('CustomizeScene')
+        scene.scene.start(SCENE_KEYS['CUSTOM'])
     }
 
     public onStartEnter(scene: Phaser.Scene) {
-        scene.scene.start('StartScene')
+        scene.scene.start(SCENE_KEYS['START'])
     }
 
     public onSettingEnter(scene: Phaser.Scene, msg?: Object) {
-        scene.scene.start('SettingScene', msg)
+        scene.scene.start(SCENE_KEYS['SETTING'], msg)
     }
 
     public onPauseEnter(scene: Phaser.Scene) {
-        scene.scene.switch('PauseScene')
+        scene.scene.switch(SCENE_KEYS['PAUSE'])
     }
 
     public onResumeEnter(scene: Phaser.Scene) {
-        scene.scene.switch('PlayScene')
+        scene.scene.switch(SCENE_KEYS['PLAY'])
     }
 
     public onOverEnter(scene: Phaser.Scene, msg?: Object) {
-        scene.scene.start('GameOverScene', msg)
+        scene.scene.start(SCENE_KEYS['OVER'], msg)
     }
 }

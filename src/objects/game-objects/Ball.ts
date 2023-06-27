@@ -1,4 +1,4 @@
-import { CANVAS_HEIGHT, CANVAS_WIDTH } from '../../constants'
+import { CANVAS_HEIGHT, CANVAS_WIDTH, SPEED_LIMIT } from '../../constants'
 import StateMachine from '../../states/StateMachine'
 import { IGameObject } from '../../types/object'
 import { Point } from '../../types/point'
@@ -6,6 +6,8 @@ import { getProjectX, getProjectY } from '../../utils/math'
 import BodyObject from './BodyObject'
 
 export default class Ball extends BodyObject {
+    private speed: number
+    private radian: number
     private elapsed: number
     private isMoving: boolean
     private powerUp: boolean
@@ -26,7 +28,7 @@ export default class Ball extends BodyObject {
         this.body?.setCircle(this.width / 2)
         this.setBounce(0.75, 0.75)
         this.setVisible(true)
-        this.setGravityY(9.8)
+        this.setGravityY(980)
         this.setCollideWorldBounds(false, 1, 1, true)
 
         this.scene.add.existing(this)
@@ -57,11 +59,9 @@ export default class Ball extends BodyObject {
     }
 
     public onIdleEnter(data: number[]) {
-        if (this.smokeParticle) this.smokeParticle.stop()
         if (data.length > 0) {
             const [x, y, score] = data
-            this.emitSmokeParticle()
-            if (score && score % 5 == 0 && score > 0) {
+            if (score && score % 5 == 0 && score > 0 && this.powerUp == false) {
                 this.powerUp = true
             }
             this.setX(x)
@@ -72,19 +72,24 @@ export default class Ball extends BodyObject {
         }
     }
 
-    private emitSmokeParticle(): void {
+    public emitSmokeParticle(): void {
         this.smokeParticle = this.scene.add.particles(100, 100, 'dot', {
-            color: [0x696969, 0x808080, 0xa9a9a9, 0xf5f5f5],
+            color: [0xe2224c, 0xe25822, 0xe2b822, 0x696969, 0xf5f5f5],
             alpha: { start: 0.9, end: 0.1, ease: 'sine.easeout' },
             angle: { min: 0, max: 360 },
             rotate: { min: 0, max: 360 },
             speed: { min: 40, max: 70 },
             colorEase: 'quad.easeinout',
             lifespan: 1500,
-            scale: 0.4,
+            scale: 0.5,
             frequency: 60,
         })
         this.smokeParticle.startFollow(this, -90, -120, true)
+        this.smokeParticle.start()
+    }
+
+    public disableSmoke() {
+        this.smokeParticle.stop()
     }
 
     public onDemoUpdate(delta: number) {
@@ -116,12 +121,13 @@ export default class Ball extends BodyObject {
     }
 
     public onFlyEnter(data: number[]) {
-        const [x, y, angle, speed] = data
-        if (speed > 0) {
+        const [x, y] = data
+        const angle = -this.radian
+        if (this.speed > 0) {
             this.isMoving = true
-            const curSpeed = speed * 7.2
+            const curSpeed = Math.min(this.speed, SPEED_LIMIT) * 7.5
             this.enableBody(true, x, y, true, true)
-            this.setVelocity(getProjectX(curSpeed, angle), -getProjectY(curSpeed, angle))
+            this.setVelocity(getProjectX(curSpeed, angle), getProjectY(curSpeed, angle))
             this.scene.physics.velocityFromRotation(angle, curSpeed, this.body?.velocity)
         }
     }
@@ -131,14 +137,19 @@ export default class Ball extends BodyObject {
     }
 
     public onSnipeEnter(data: number[]) {
-        const [power, angle] = data
+        [this.speed, this.radian] = data
         this.trajectory = []
         this.points = this.scene.add.graphics()
         this.points.fillStyle(0xffa500, 1)
         for (let i = 0; i < 6; i++) {
-            const timeSlice = i * 1.5
-            let x = this.x + getProjectX(power, angle) * timeSlice
-            const y = this.y - getProjectY(power, angle) * timeSlice + 0.5 * 19.8 * timeSlice ** 2
+            const timeSlice = i * 0.2
+            let x =
+                this.x +
+                getProjectX(Math.min(SPEED_LIMIT, this.speed) * 7.5, this.radian) * timeSlice
+            const y =
+                this.y -
+                getProjectY(Math.min(SPEED_LIMIT, this.speed) * 7.5, this.radian) * timeSlice +
+                0.5 * 980 * timeSlice ** 2
             if (x < 0) x = -x // symmetric
             else if (x > CANVAS_WIDTH) x = CANVAS_WIDTH - (x - CANVAS_WIDTH)
             this.trajectory.push({ x, y })
@@ -155,7 +166,7 @@ export default class Ball extends BodyObject {
     }
 
     public isPowerUp() {
-        return this.powerUp
+        return this.powerUp && this.smokeParticle
     }
 
     public disablePowerUp() {
