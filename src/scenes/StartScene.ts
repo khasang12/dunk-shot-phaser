@@ -76,15 +76,15 @@ export default class StartScene extends Phaser.Scene {
             key: 'basket',
             scale: 0.5 * 1.5,
             callback: () => {
-                this.cameras.main.fadeOut(500, 0, 0, 0)
-                this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
-                    if (data.skin)
-                        gameManager.getSceneManager().stateMachine.setState('play', this, data)
-                    else
-                        gameManager
-                            .getSceneManager()
-                            .stateMachine.setState('play', this, { skin: 'ball' })
-                })
+                if (this.firebase.getUser()) {
+                    //console.log(this.firebase.getUser())
+                    this.loadPlayScene(data)
+                } else {
+                    this.firebase.signInWithPopup()
+                    this.firebase.onLoggedIn(() => {
+                        this.loadPlayScene(data)
+                    })
+                }
             },
         }).setDepth(2)
         const basket2Img = new Image({
@@ -112,15 +112,7 @@ export default class StartScene extends Phaser.Scene {
             y: CANVAS_HEIGHT - 90,
             key: 'drag-it',
             callback: () => {
-                this.cameras.main.fadeOut(500, 0, 0, 0)
-                this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
-                    if (data.skin)
-                        gameManager.getSceneManager().stateMachine.setState('play', this, data)
-                    else
-                        gameManager
-                            .getSceneManager()
-                            .stateMachine.setState('play', this, { skin: 'ball' })
-                })
+                this.loadPlayScene(data)
             },
             scale: 0.3 * 1.5,
         })
@@ -146,12 +138,25 @@ export default class StartScene extends Phaser.Scene {
             text: '',
             scale: 0.3 * 1.5,
             callback: () => {
-                console.log('challenge')
+                if (data.skin)
+                    gameManager.getSceneManager().stateMachine.setState('play', this, data)
+                else
+                    gameManager
+                        .getSceneManager()
+                        .stateMachine.setState('play', this, { skin: 'ball' })
             },
         })
     }
 
     public update(time: number, delta: number) {
         this.ball.update(delta)
+    }
+
+    public loadPlayScene(data: SceneParam) {
+        this.cameras.main.fadeOut(500, 0, 0, 0)
+        this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+            if (data.skin) gameManager.getSceneManager().stateMachine.setState('play', this, data)
+            else gameManager.getSceneManager().stateMachine.setState('play', this, { skin: 'ball' })
+        })
     }
 }

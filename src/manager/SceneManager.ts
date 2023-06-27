@@ -53,8 +53,8 @@ export default class SceneManager {
         scene.scene.start(SCENE_KEYS['CUSTOM'])
     }
 
-    public onStartEnter(scene: Phaser.Scene) {
-        scene.scene.start(SCENE_KEYS['START'])
+    public onStartEnter(scene: Phaser.Scene, msg?: Object) {
+        scene.scene.start(SCENE_KEYS['START'], msg)
     }
 
     public onSettingEnter(scene: Phaser.Scene, msg?: Object) {

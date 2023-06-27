@@ -288,6 +288,8 @@ export default class PlayScene extends Phaser.Scene {
     private async onHitLowerBound() {
         this.gameOverAudio.play()
         gameManager.getScoreManager().saveScoreToLocalStorage()
+        const name = this.firebase.getUser().displayName
+        this.firebase.addHighScore(name, gameManager.getScoreManager().getCurScore())
         this.scene.start('GameOverScene', { data: gameManager.getScoreManager().getCurScore() })
     }
 
