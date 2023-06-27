@@ -7,4 +7,19 @@ export class Text extends Phaser.GameObjects.Text {
 
         this.scene.add.existing(this)
     }
+
+    public emitTextFadeInOut(x: number, y: number, delta: number) {
+        this.setX(x)
+        this.setY(y)
+        this.setAlpha(1)
+        this.scene.tweens.add({
+            targets: this,
+            alpha: 0,
+            duration: 1000,
+            ease: 'ease.sineInOut',
+            onComplete: () => {
+                this.setAlpha(0)
+            },
+        })
+    }
 }

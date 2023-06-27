@@ -1,4 +1,5 @@
 import { CANVAS_HEIGHT, CANVAS_WIDTH } from '../constants'
+import { gameManager } from '../game'
 import ClickableImage from '../objects/images/ClickableImage'
 import Image from '../objects/images/Image'
 import { Text } from '../objects/texts/Text'
@@ -8,14 +9,16 @@ export default class PauseScene extends Phaser.Scene {
         super({ key: 'PauseScene' })
     }
 
-    create() {
+    public create() {
         const settingsImg = new ClickableImage({
             scene: this,
             x: 80,
             y: 50,
             key: 'settings',
             callback: () => {
-                this.scene.start('SettingScene', { data: 'PauseScene' })
+                gameManager
+                    .getSceneManager()
+                    .stateMachine.setState('setting', this, { data: 'PauseScene' })
             },
             scale: 0.32,
         })
@@ -51,7 +54,7 @@ export default class PauseScene extends Phaser.Scene {
             y: CANVAS_HEIGHT / 2 - 150,
             key: 'main-menu',
             callback: () => {
-                this.scene.start('StartScene')
+                gameManager.getSceneManager().stateMachine.setState('start', this)
             },
             scale: 0.32,
         })
@@ -71,8 +74,7 @@ export default class PauseScene extends Phaser.Scene {
             y: CANVAS_HEIGHT / 2 + 200,
             key: 'resume',
             callback: () => {
-                this.scene.switch('PlayScene')
-                //this.scene.bringToTop('PlayScene')
+                gameManager.getSceneManager().stateMachine.setState('resume', this)
             },
             scale: 0.36,
         })

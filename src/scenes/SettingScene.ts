@@ -1,4 +1,5 @@
 import { CANVAS_HEIGHT, CANVAS_WIDTH, DARK_BG, LIGHT_BG } from '../constants'
+import { gameManager } from '../game'
 import ClickableImage from '../objects/images/ClickableImage'
 import Image from '../objects/images/Image'
 import { Text } from '../objects/texts/Text'
@@ -8,7 +9,6 @@ type SceneParam = {
 }
 
 const div = <HTMLElement>document.getElementById('game')
-
 export default class SettingScene extends Phaser.Scene {
     private soundImgOn: ClickableImage
     private soundImgOff: ClickableImage
@@ -19,20 +19,16 @@ export default class SettingScene extends Phaser.Scene {
         super({ key: 'SettingScene' })
     }
 
-    preload() {
-        return
-    }
-
-    create(data: SceneParam) {
+    public create(data: SceneParam) {
         const closeImg = new ClickableImage({
             scene: this,
             x: 50,
             y: 45,
             key: 'close',
             callback: () => {
-                this.scene.start(data.data)
+                gameManager.getSceneManager().stateMachine.setState(data.data, this)
             },
-            scale: 0.2 * 1.5,
+            scale: 0.4,
         })
 
         const settingsText = new Text({
@@ -54,7 +50,12 @@ export default class SettingScene extends Phaser.Scene {
             x: CANVAS_WIDTH - 40,
             y: 50,
             msg: localStorage.getItem('star') || '0',
-            style: { fontFamily: 'MilkyHoney', fontSize: '45px', color: 'black', strokeThickness: 3 },
+            style: {
+                fontFamily: 'MilkyHoney',
+                fontSize: '45px',
+                color: 'black',
+                strokeThickness: 3,
+            },
         })
 
         this.soundImgOn = new ClickableImage({

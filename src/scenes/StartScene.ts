@@ -5,6 +5,7 @@ import ClickableImage from '../objects/images/ClickableImage'
 import Image from '../objects/images/Image'
 import { Text } from '../objects/texts/Text'
 import BasketClickableImage from '../objects/images/BasketClickableImage'
+import { gameManager } from '../game'
 
 type SceneParam = {
     skin: string
@@ -26,7 +27,9 @@ export default class StartScene extends Phaser.Scene {
             y: 50,
             key: 'settings',
             callback: () => {
-                this.scene.start('SettingScene', { data: 'StartScene' })
+                gameManager
+                    .getSceneManager()
+                    .stateMachine.setState('setting', this, { data: 'start' })
             },
             scale: 0.2 * 1.5,
         })
@@ -73,8 +76,15 @@ export default class StartScene extends Phaser.Scene {
             key: 'basket',
             scale: 0.5 * 1.5,
             callback: () => {
-                if (data.skin) this.scene.start('PlayScene', data)
-                else this.scene.start('PlayScene', { skin: 'ball' })
+                this.cameras.main.fadeOut(500, 0, 0, 0)
+                this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+                    if (data.skin)
+                        gameManager.getSceneManager().stateMachine.setState('play', this, data)
+                    else
+                        gameManager
+                            .getSceneManager()
+                            .stateMachine.setState('play', this, { skin: 'ball' })
+                })
             },
         }).setDepth(2)
         const basket2Img = new Image({
@@ -94,6 +104,7 @@ export default class StartScene extends Phaser.Scene {
         }).setDepth(1)
         if (data.skin) this.ball.setTexture(data.skin)
         else this.ball.setTexture('ball')
+        this.ball.stateMachine.setState('demo')
 
         const dragBtn = new ClickableImage({
             scene: this,
@@ -101,34 +112,29 @@ export default class StartScene extends Phaser.Scene {
             y: CANVAS_HEIGHT - 90,
             key: 'drag-it',
             callback: () => {
-                if (data.skin) this.scene.start('PlayScene', data)
-                else this.scene.start('PlayScene', { skin: 'ball' })
+                this.cameras.main.fadeOut(500, 0, 0, 0)
+                this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+                    if (data.skin)
+                        gameManager.getSceneManager().stateMachine.setState('play', this, data)
+                    else
+                        gameManager
+                            .getSceneManager()
+                            .stateMachine.setState('play', this, { skin: 'ball' })
+                })
             },
             scale: 0.3 * 1.5,
         })
         dragBtn.enableOscillator()
 
-        const freeGiftBtn = new Button({
-            scene: this,
-            x: CANVAS_WIDTH - 190,
-            y: CANVAS_HEIGHT - 260,
-            key: 'free-gift',
-            text: 'FREE GIFT!',
-            scale: 0.3 * 1.5,
-            callback: () => {
-                console.log('free gift')
-            },
-        })
-
         const customizeBtn = new Button({
             scene: this,
             x: CANVAS_WIDTH - 190,
-            y: CANVAS_HEIGHT - 160,
+            y: CANVAS_HEIGHT - 190,
             key: 'customize',
             text: '',
             scale: 0.2 * 1.5,
             callback: () => {
-                this.scene.start('CustomizeScene')
+                gameManager.getSceneManager().stateMachine.setState('customize', this)
             },
         })
 
@@ -146,6 +152,6 @@ export default class StartScene extends Phaser.Scene {
     }
 
     public update(time: number, delta: number) {
-        this.ball.flyDemo(time, delta)
+        this.ball.update(delta)
     }
 }

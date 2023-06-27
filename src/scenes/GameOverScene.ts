@@ -1,4 +1,5 @@
 import { CANVAS_HEIGHT, CANVAS_WIDTH } from '../constants'
+import { gameManager } from '../game'
 import ClickableImage from '../objects/images/ClickableImage'
 import Image from '../objects/images/Image'
 import { Text } from '../objects/texts/Text'
@@ -12,11 +13,7 @@ export default class GameOverScene extends Phaser.Scene {
         super({ key: 'GameOverScene' })
     }
 
-    preload() {
-        return
-    }
-
-    create(data: SceneParam) {
+    public create(data: SceneParam) {
         this.cameras.main.fadeIn(500, 0, 0, 0)
 
         const star = new Image({
@@ -30,7 +27,7 @@ export default class GameOverScene extends Phaser.Scene {
             scene: this,
             x: CANVAS_WIDTH - 40,
             y: 50,
-            msg: localStorage.getItem('star') || '0',
+            msg: gameManager.getScoreManager().getStars().toString(),
             style: {
                 fontFamily: 'MilkyHoney',
                 fontSize: '45px',
@@ -51,7 +48,7 @@ export default class GameOverScene extends Phaser.Scene {
             scene: this,
             x: CANVAS_WIDTH / 2,
             y: CANVAS_HEIGHT / 2 - 280,
-            msg: <string>localStorage.getItem('high-score'),
+            msg: gameManager.getScoreManager().getBestScore().toString(),
             style: { fontSize: '90px', color: '#ffa500', fontStyle: 'bold' },
         })
 
@@ -102,7 +99,9 @@ export default class GameOverScene extends Phaser.Scene {
             y: CANVAS_HEIGHT / 2 + 300,
             key: 'settings',
             callback: () => {
-                this.scene.start('SettingScene', { data: 'GameOverScene' })
+                gameManager
+                    .getSceneManager()
+                    .stateMachine.setState('setting', this, { data: 'over' })
             },
             scale: 0.32,
         })

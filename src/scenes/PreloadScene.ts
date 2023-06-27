@@ -1,4 +1,5 @@
 import { CANVAS_HEIGHT, CANVAS_WIDTH } from '../constants'
+import { gameManager } from '../game'
 
 export default class PreloadScene extends Phaser.Scene {
     constructor() {
@@ -6,6 +7,8 @@ export default class PreloadScene extends Phaser.Scene {
     }
 
     public preload() {
+        gameManager.getSceneManager().stateMachine.setState('preload', this)
+
         // Loading Indicator
         this.showProgress()
 
@@ -20,7 +23,7 @@ export default class PreloadScene extends Phaser.Scene {
     }
 
     public create() {
-        this.scene.start('StartScene')
+        gameManager.getSceneManager().stateMachine.setState('start', this)
     }
 
     private showProgress(): void {
@@ -111,6 +114,7 @@ export default class PreloadScene extends Phaser.Scene {
         this.load.image('leader-board', 'leader-board.png')
         this.load.image('main-menu', 'mainmenu.png')
         this.load.image('resume', 'resume.png')
+        this.load.image('lock', 'lock.png')
     }
 
     private preloadBalls(): void {
@@ -140,6 +144,9 @@ export default class PreloadScene extends Phaser.Scene {
         this.load.image('logo', 'logo.png')
         this.load.image('net', 'net.png')
         this.load.image('star', 'star.png')
+        this.load.image('shadow', 'shadow.png')
+        this.load.image('flare', 'flare.png')
+        this.load.image('spark', 'spark.png')
     }
 
     private preloadThemes(): void {

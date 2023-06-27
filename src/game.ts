@@ -7,13 +7,13 @@ import GameOverScene from './scenes/GameOverScene'
 import { CANVAS_HEIGHT, CANVAS_WIDTH } from './constants'
 import SettingScene from './scenes/SettingScene'
 import CustomizeScene from './scenes/CustomizeScene'
-
+import GameManager from './manager/GameManager'
 
 export const config = {
     type: Phaser.AUTO,
     parent: 'game',
     transparent: true,
-    canvasStyle: 'border: 2px solid black; box-shadow: 0 0 10px rgba(255, 165, 0, 0.5)',
+    canvasStyle: 'border-left: 2px solid black; border-right: 2px solid black',
     scale: {
         parent: 'phaser-game',
         mode: Phaser.Scale.FIT,
@@ -21,12 +21,19 @@ export const config = {
         width: CANVAS_WIDTH,
         height: CANVAS_HEIGHT,
     },
-    scene: [PreloadScene, StartScene, PlayScene, PauseScene, GameOverScene, SettingScene, CustomizeScene],
+    scene: [
+        PreloadScene,
+        StartScene,
+        PlayScene,
+        PauseScene,
+        GameOverScene,
+        SettingScene,
+        CustomizeScene,
+    ],
     physics: {
         default: 'arcade',
         arcade: {
-            debug: false,
-            gravity: { y: 980 },
+            debug: false
         },
     },
 }
@@ -34,3 +41,5 @@ export const config = {
 window.addEventListener('load', () => {
     const _game = new Phaser.Game(config)
 })
+
+export const gameManager = GameManager.getInstance()

@@ -1,34 +1,98 @@
-import { CANVAS_HEIGHT, CANVAS_WIDTH } from '../../constants'
+import { CANVAS_HEIGHT, CANVAS_WIDTH, SPEED_LIMIT } from '../../constants'
+import StateMachine from '../../states/StateMachine'
 import { IGameObject } from '../../types/object'
+import { Point } from '../../types/point'
+import { getProjectX, getProjectY } from '../../utils/math'
 import BodyObject from './BodyObject'
 
 export default class Ball extends BodyObject {
+    private speed: number
+    private radian: number
     private elapsed: number
     private isMoving: boolean
-    
+    private powerUp: boolean
+    private trajectory: Point[]
+    public points: Phaser.GameObjects.Graphics
+    public stateMachine: StateMachine
+    private smokeParticle: Phaser.GameObjects.Particles.ParticleEmitter
 
     constructor(o: IGameObject) {
         super(o)
         this.elapsed = 0
         this.isMoving = false
+        this.powerUp = false
 
         this.scene.physics.add.existing(this)
 
         this.disableBody(true, true)
         this.body?.setCircle(this.width / 2)
-        this.setBounce(1, 1)
+        this.setBounce(0.75, 0.75)
         this.setVisible(true)
-        this.setGravityY(9.8)
+        this.setGravityY(980)
         this.setCollideWorldBounds(false, 1, 1, true)
 
         this.scene.add.existing(this)
+
+        this.stateMachine = new StateMachine(this, 'ball')
+
+        this.stateMachine
+            .addState('idle', {
+                onEnter: this.onIdleEnter,
+            })
+            .addState('demo', {
+                onUpdate: this.onDemoUpdate,
+            })
+            .addState('snipe', {
+                onEnter: this.onSnipeEnter,
+                onExit: this.onSnipeExit,
+            })
+            .addState('fly', {
+                onEnter: this.onFlyEnter,
+                onUpdate: this.onFlyUpdate,
+            })
+
+        this.stateMachine.setState('idle')
     }
 
-    public getIsMoving() {
-        return this.isMoving
+    public update(dt: number) {
+        this.stateMachine.update(dt)
     }
 
-    public flyDemo(time: number, delta: number) {
+    public onIdleEnter(data: number[]) {
+        if (data.length > 0) {
+            const [x, y, score] = data
+            if (score && score % 5 == 0 && score > 0 && this.powerUp == false) {
+                this.powerUp = true
+            }
+            this.setX(x)
+            this.setY(y)
+            this.setVelocity(0, 0)
+            this.disableBody(true, false)
+            this.isMoving = false
+        }
+    }
+
+    public emitSmokeParticle(): void {
+        this.smokeParticle = this.scene.add.particles(100, 100, 'dot', {
+            color: [0xe2224c, 0xe25822, 0xe2b822, 0x696969, 0xf5f5f5],
+            alpha: { start: 0.9, end: 0.1, ease: 'sine.easeout' },
+            angle: { min: 0, max: 360 },
+            rotate: { min: 0, max: 360 },
+            speed: { min: 40, max: 70 },
+            colorEase: 'quad.easeinout',
+            lifespan: 1500,
+            scale: 0.5,
+            frequency: 60,
+        })
+        this.smokeParticle.startFollow(this, -90, -120, true)
+        this.smokeParticle.start()
+    }
+
+    public disableSmoke() {
+        this.smokeParticle.stop()
+    }
+
+    public onDemoUpdate(delta: number) {
         const startPoint = { x: 110, y: CANVAS_HEIGHT - 180 }
         const endPoint = { x: CANVAS_WIDTH - 140, y: CANVAS_HEIGHT / 2 + 30 }
         const apexPoint = { x: 200, y: 0 }
@@ -38,7 +102,6 @@ export default class Ball extends BodyObject {
 
         // Calculate the position of the sprite along the parabolic trajectory
         let t = ((this.elapsed / duration) * delta) / 16
-        console.log(delta)
         const x =
             startPoint.x +
             t * (2 * (1 - t) * (apexPoint.x - startPoint.x) + t * (endPoint.x - startPoint.x))
@@ -57,29 +120,56 @@ export default class Ball extends BodyObject {
         this.elapsed += this.scene.game.loop.delta
     }
 
-    public fly(x: number, y: number, angle: number, speed: number) {
-        if (speed > 0) {
+    public onFlyEnter(data: number[]) {
+        const [x, y] = data
+        const angle = -this.radian
+        if (this.speed > 0) {
             this.isMoving = true
-            const curSpeed = speed*7.2
+            const curSpeed = Math.min(this.speed, SPEED_LIMIT) * 7.5
             this.enableBody(true, x, y, true, true)
-            this.setVelocity(curSpeed * Math.cos(angle), -curSpeed * Math.sin(angle))
-            this.scene.physics.velocityFromRotation(-angle, curSpeed, this.body?.velocity)
+            this.setVelocity(getProjectX(curSpeed, angle), getProjectY(curSpeed, angle))
+            this.scene.physics.velocityFromRotation(angle, curSpeed, this.body?.velocity)
         }
     }
 
-    public resetPosition(x: number, y: number) {
-        this.setX(x)
-        this.setY(y)
-        this.setVelocity(0, 0)
-        this.reset()
-        this.isMoving = false
+    public onFlyUpdate(_delta: number) {
+        if (this.isMoving) this.rotation += 0.1
     }
 
-    public reset() {
-        this.disableBody(true, false)
+    public onSnipeEnter(data: number[]) {
+        [this.speed, this.radian] = data
+        this.trajectory = []
+        this.points = this.scene.add.graphics()
+        this.points.fillStyle(0xffa500, 1)
+        for (let i = 0; i < 6; i++) {
+            const timeSlice = i * 0.2
+            let x =
+                this.x +
+                getProjectX(Math.min(SPEED_LIMIT, this.speed) * 7.5, this.radian) * timeSlice
+            const y =
+                this.y -
+                getProjectY(Math.min(SPEED_LIMIT, this.speed) * 7.5, this.radian) * timeSlice +
+                0.5 * 980 * timeSlice ** 2
+            if (x < 0) x = -x // symmetric
+            else if (x > CANVAS_WIDTH) x = CANVAS_WIDTH - (x - CANVAS_WIDTH)
+            this.trajectory.push({ x, y })
+        }
+        // Loop through each point in the trajectory and draw a circle at that position
+        for (let i = 0; i < 6; i++) {
+            const point = this.trajectory[i]
+            this.points.fillCircle(point.x, point.y, 12 - i)
+        }
     }
 
-    public changeSkin(key: string){
-        this.setTexture(key)
-    }    
+    public onSnipeExit() {
+        this.points.destroy()
+    }
+
+    public isPowerUp() {
+        return this.powerUp && this.smokeParticle
+    }
+
+    public disablePowerUp() {
+        this.powerUp = false
+    }
 }
