@@ -1,4 +1,5 @@
 import { CANVAS_HEIGHT, CANVAS_WIDTH } from '../constants'
+import { sceneManager } from '../game'
 import ClickableImage from '../objects/images/ClickableImage'
 import Image from '../objects/images/Image'
 import { Text } from '../objects/texts/Text'
@@ -87,7 +88,7 @@ export default class GameOverScene extends Phaser.Scene {
             y: CANVAS_HEIGHT / 2 + 300,
             key: 'return',
             callback: () => {
-                this.scene.start('PlayScene')
+                sceneManager.stateMachine.setState('play', this)
             },
             scale: 0.4,
         })
@@ -98,7 +99,7 @@ export default class GameOverScene extends Phaser.Scene {
             y: CANVAS_HEIGHT / 2 + 300,
             key: 'settings',
             callback: () => {
-                this.scene.start('SettingScene', { data: 'GameOverScene' })
+                sceneManager.stateMachine.setState('setting', this, { data: 'over' })
             },
             scale: 0.32,
         })

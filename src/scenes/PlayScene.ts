@@ -1,4 +1,5 @@
 import { CANVAS_HEIGHT, CANVAS_WIDTH } from '../constants'
+import { sceneManager } from '../game'
 import Ball from '../objects/game-objects/ball/Ball'
 import Basket from '../objects/game-objects/basket/Basket'
 import Star from '../objects/game-objects/star/Star'
@@ -79,7 +80,9 @@ export default class PlayScene extends Phaser.Scene {
     public update(dt: number) {
         this.ball.update(dt)
         this.updateBackground()
-        if (this.ball.y > CANVAS_HEIGHT) this.onHitLowerBound()
+        if (this.ball.y > this.curBasket.y + 20) {
+            this.onHitLowerBound()
+        }
 
         if (
             (this.ball.body?.velocity.y || 0) > 0 &&
@@ -185,7 +188,7 @@ export default class PlayScene extends Phaser.Scene {
             y: 50,
             key: 'pause',
             callback: () => {
-                this.scene.switch('PauseScene')
+                sceneManager.stateMachine.setState('pause', this)
             },
             scale: 0.12,
         })
@@ -329,11 +332,11 @@ export default class PlayScene extends Phaser.Scene {
         this.cameras.main.setScroll(this.cameras.main.scrollX, this.ball.y - this.curBasket.y)
     }
 
-    private onHitLowerBound() {
+    private async onHitLowerBound() {
         this.gameOverAudio.play()
-        this.scene.start('GameOverScene', { data: this.score })
         this.saveScore()
         this.isGameEnd = true
+        this.scene.start('GameOverScene', { data: this.score })
     }
 
     private onHitCurrentBasket() {

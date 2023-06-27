@@ -5,6 +5,7 @@ import ClickableImage from '../objects/images/ClickableImage'
 import Image from '../objects/images/Image'
 import { Text } from '../objects/texts/Text'
 import BasketClickableImage from '../objects/images/BasketClickableImage'
+import { sceneManager } from '../game'
 
 type SceneParam = {
     skin: string
@@ -26,7 +27,7 @@ export default class StartScene extends Phaser.Scene {
             y: 50,
             key: 'settings',
             callback: () => {
-                this.scene.start('SettingScene', { data: 'StartScene' })
+                sceneManager.stateMachine.setState('setting', this, { data: 'start' })
             },
             scale: 0.2 * 1.5,
         })
@@ -74,14 +75,10 @@ export default class StartScene extends Phaser.Scene {
             scale: 0.5 * 1.5,
             callback: () => {
                 this.cameras.main.fadeOut(500, 0, 0, 0)
-                this.cameras.main.once(
-                    Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE,
-                    () => {
-                        if (data.skin) this.scene.start('PlayScene', data)
-                        else this.scene.start('PlayScene', { skin: 'ball' })
-                    }
-                )
-                
+                this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+                    if (data.skin) sceneManager.stateMachine.setState('play', this, data)
+                    else sceneManager.stateMachine.setState('play', this, { skin: 'ball' })
+                })
             },
         }).setDepth(2)
         const basket2Img = new Image({
@@ -111,8 +108,8 @@ export default class StartScene extends Phaser.Scene {
             callback: () => {
                 this.cameras.main.fadeOut(500, 0, 0, 0)
                 this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
-                    if (data.skin) this.scene.start('PlayScene', data)
-                    else this.scene.start('PlayScene', { skin: 'ball' })
+                    if (data.skin) sceneManager.stateMachine.setState('play', this, data)
+                    else sceneManager.stateMachine.setState('play', this, { skin: 'ball' })
                 })
             },
             scale: 0.3 * 1.5,
@@ -127,7 +124,7 @@ export default class StartScene extends Phaser.Scene {
             text: '',
             scale: 0.2 * 1.5,
             callback: () => {
-                this.scene.start('CustomizeScene')
+                sceneManager.stateMachine.setState('customize', this)
             },
         })
 

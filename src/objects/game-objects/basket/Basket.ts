@@ -49,6 +49,11 @@ export default class Basket extends BodyObject {
 
     private createMultiBody() {
         const edge = 40
+        const config = {
+            allowGravity: false,
+            immovable: true,
+            visible: false,
+        }
 
         this.bodyRects = [
             this.scene.add.rectangle(this.x - edge, this.y, edge, edge),
@@ -62,48 +67,22 @@ export default class Basket extends BodyObject {
         ]
 
         this.openRects = [
-            this.scene.add.rectangle(this.x - 25, this.y - 25, 20, 25),
-            this.scene.add.rectangle(this.x + 25, this.y - 25, 20, 25),
+            this.scene.add.rectangle(this.x - 25, this.y - 25, 20, 35),
+            this.scene.add.rectangle(this.x + 25, this.y - 25, 20, 35),
         ]
 
-        this.bodyGroup = this.scene.physics.add.group({
-            allowGravity: false,
-            immovable: true,
-            visible: false,
-        })
-
-        this.openGroup = this.scene.physics.add.group({
-            allowGravity: false,
-            immovable: true,
-            visible: true,
-        })
+        this.bodyGroup = this.scene.physics.add.group(config)
+        this.openGroup = this.scene.physics.add.group(config)
 
         this.edgeGroup = this.scene.physics.add.group({
-            allowGravity: false,
-            immovable: true,
-            visible: false,
+            ...config,
             bounceX: 0.02,
             bounceY: 0.02,
         })
 
-        this.addBodyGroup()
-        this.addEdgeGroup()
-        this.addOpenGroup()
-    }
-
-    private addBodyGroup() {
-        for (const body of this.bodyRects) this.bodyGroup.add(body)
-        this.bodyGroup.setActive(false)
-    }
-
-    private addOpenGroup() {
-        for (const body of this.openRects) this.openGroup.add(body)
-        this.openGroup.setActive(false)
-    }
-
-    private addEdgeGroup() {
-        for (const body of this.edgeRects) this.edgeGroup.add(body)
-        this.edgeGroup.setActive(false)
+        this.bodyGroup.addMultiple(this.bodyRects)
+        this.edgeGroup.addMultiple(this.edgeRects)
+        this.openGroup.addMultiple(this.openRects)
     }
 
     private updateBodyGroup() {
@@ -114,7 +93,6 @@ export default class Basket extends BodyObject {
     }
 
     private updateEdgeGroup() {
-        this.scene.physics.world.enable(this.edgeGroup)
         const alpha = getAngCoeff(this.width, this.height)
         const l = (getHypot(this.width, this.height) * this.scale) / 2
         this.edgeGroup.setX(

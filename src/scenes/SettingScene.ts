@@ -1,4 +1,5 @@
 import { CANVAS_HEIGHT, CANVAS_WIDTH, DARK_BG, LIGHT_BG } from '../constants'
+import { sceneManager } from '../game'
 import ClickableImage from '../objects/images/ClickableImage'
 import Image from '../objects/images/Image'
 import { Text } from '../objects/texts/Text'
@@ -26,7 +27,7 @@ export default class SettingScene extends Phaser.Scene {
             y: 45,
             key: 'close',
             callback: () => {
-                this.scene.start(data.data)
+                sceneManager.stateMachine.setState(data.data, this)
             },
             scale: 0.4,
         })

@@ -1,10 +1,10 @@
-import { IState } from '../types/state'
+import { IGameState } from '../types/state'
 
 let idCount = 0
 
-export default class StateMachine {
-    private states = new Map<string, IState>()
-    private currentState?: IState
+export default class GameStateMachine {
+    private states = new Map<string, IGameState>()
+    private currentState?: IGameState
     private id = (++idCount).toString()
     private context?: object
     private isChangingState = false
@@ -19,8 +19,8 @@ export default class StateMachine {
     addState(
         name: string,
         config?: {
-            onEnter?: (args: any[]) => void
-            onUpdate?: (dt: number, args?: number[]) => void
+            onEnter?: (arg: Phaser.Scene, msg?: Object) => void
+            onUpdate?: (dt: number) => void
             onExit?: () => void
         }
     ) {
@@ -37,12 +37,14 @@ export default class StateMachine {
         return this
     }
 
-    setState(name: string, ...args: any[]) {
+    setState(name: string, args: Phaser.Scene, msg?: Object) {
         // switch to State called `name`
         if (!this.states.has(name)) {
             console.warn(`Tried to change to unknown state: ${name}`)
             return
         }
+
+        if (this.currentState?.name == name) return
 
         if (this.isChangingState) {
             this.changeStateQueue.push(name)
@@ -60,10 +62,11 @@ export default class StateMachine {
             this.currentState.onExit()
         }
 
-        this.currentState = <IState>this.states.get(name)
+        this.currentState = <IGameState>this.states.get(name)
 
         if (this.currentState.onEnter) {
-            this.currentState.onEnter(args)
+            if (msg) this.currentState.onEnter(args, msg)
+            else this.currentState.onEnter(args)
         }
 
         this.isChangingState = false
@@ -77,10 +80,10 @@ export default class StateMachine {
         return this.currentState.name === name
     }
 
-    update(dt: number) {
+    update(dt: number, arg: Phaser.Scene) {
         // update current state if exists
         if (this.changeStateQueue.length > 0) {
-            this.setState(<string>this.changeStateQueue.shift())
+            this.setState(<string>this.changeStateQueue.shift(), arg)
             return
         }
 

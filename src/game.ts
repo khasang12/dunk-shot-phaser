@@ -7,13 +7,13 @@ import GameOverScene from './scenes/GameOverScene'
 import { CANVAS_HEIGHT, CANVAS_WIDTH } from './constants'
 import SettingScene from './scenes/SettingScene'
 import CustomizeScene from './scenes/CustomizeScene'
+import SceneManager from './states/SceneManager'
 
 export const config = {
     type: Phaser.AUTO,
     parent: 'game',
     transparent: true,
-    canvasStyle:
-        'border-left: 2px solid black; border-right: 2px solid black',
+    canvasStyle: 'border-left: 2px solid black; border-right: 2px solid black',
     scale: {
         parent: 'phaser-game',
         mode: Phaser.Scale.FIT,
@@ -38,6 +38,8 @@ export const config = {
         },
     },
 }
+
+export const sceneManager = new SceneManager()
 
 window.addEventListener('load', () => {
     const _game = new Phaser.Game(config)
