@@ -1,5 +1,5 @@
 import { CANVAS_HEIGHT, CANVAS_WIDTH } from '../constants'
-import { sceneManager } from '../game'
+import { gameManager } from '../game'
 
 export default class PreloadScene extends Phaser.Scene {
     constructor() {
@@ -7,7 +7,7 @@ export default class PreloadScene extends Phaser.Scene {
     }
 
     public preload() {
-        sceneManager.stateMachine.setState('preload', this)
+        gameManager.getSceneManager().stateMachine.setState('preload', this)
 
         // Loading Indicator
         this.showProgress()
@@ -23,7 +23,7 @@ export default class PreloadScene extends Phaser.Scene {
     }
 
     public create() {
-        sceneManager.stateMachine.setState('start', this)
+        gameManager.getSceneManager().stateMachine.setState('start', this)
     }
 
     private showProgress(): void {

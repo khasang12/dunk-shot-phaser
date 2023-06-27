@@ -1,9 +1,9 @@
-import { CANVAS_HEIGHT, CANVAS_WIDTH } from '../../../constants'
-import StateMachine from '../../../states/StateMachine'
-import { IGameObject } from '../../../types/object'
-import { Point } from '../../../types/point'
-import { getProjectX, getProjectY } from '../../../utils/math'
-import BodyObject from '../BodyObject'
+import { CANVAS_HEIGHT, CANVAS_WIDTH } from '../../constants'
+import StateMachine from '../../states/StateMachine'
+import { IGameObject } from '../../types/object'
+import { Point } from '../../types/point'
+import { getProjectX, getProjectY } from '../../utils/math'
+import BodyObject from './BodyObject'
 
 export default class Ball extends BodyObject {
     private elapsed: number
@@ -138,7 +138,7 @@ export default class Ball extends BodyObject {
         for (let i = 0; i < 6; i++) {
             const timeSlice = i * 1.5
             let x = this.x + getProjectX(power, angle) * timeSlice
-            const y = this.y - getProjectY(power, angle) * timeSlice + 0.5 * 20 * timeSlice ** 2
+            const y = this.y - getProjectY(power, angle) * timeSlice + 0.5 * 19.8 * timeSlice ** 2
             if (x < 0) x = -x // symmetric
             else if (x > CANVAS_WIDTH) x = CANVAS_WIDTH - (x - CANVAS_WIDTH)
             this.trajectory.push({ x, y })

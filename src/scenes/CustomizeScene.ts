@@ -1,5 +1,5 @@
 import { CANVAS_WIDTH } from '../constants'
-import { sceneManager } from '../game'
+import { gameManager } from '../game'
 import ClickableImage from '../objects/images/ClickableImage'
 import Image from '../objects/images/Image'
 import { Text } from '../objects/texts/Text'
@@ -89,7 +89,7 @@ export default class CustomizeScene extends Phaser.Scene {
             y: y,
             key: key,
             callback: () => {
-                sceneManager.stateMachine.setState('start', this, { skin: key })
+                gameManager.getSceneManager().stateMachine.setState('start', this, { skin: key })
             },
             scale: 0.3,
         })

@@ -7,7 +7,7 @@ import GameOverScene from './scenes/GameOverScene'
 import { CANVAS_HEIGHT, CANVAS_WIDTH } from './constants'
 import SettingScene from './scenes/SettingScene'
 import CustomizeScene from './scenes/CustomizeScene'
-import SceneManager from './states/SceneManager'
+import GameManager from './manager/GameManager'
 
 export const config = {
     type: Phaser.AUTO,
@@ -39,8 +39,8 @@ export const config = {
     },
 }
 
-export const sceneManager = new SceneManager()
-
 window.addEventListener('load', () => {
     const _game = new Phaser.Game(config)
 })
+
+export const gameManager = GameManager.getInstance()

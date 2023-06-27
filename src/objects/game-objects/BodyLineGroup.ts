@@ -1,4 +1,4 @@
-import { IBodyGroup } from '../../../types/body-group'
+import { IBodyGroup } from '../../types/body-group'
 
 export default class BodyLineGroup extends Phaser.Physics.Arcade.Group {
     constructor(bl: IBodyGroup) {

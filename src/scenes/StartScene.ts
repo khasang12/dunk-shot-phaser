@@ -1,11 +1,11 @@
 import { CANVAS_HEIGHT, CANVAS_WIDTH } from '../constants'
-import Ball from '../objects/game-objects/ball/Ball'
+import Ball from '../objects/game-objects/Ball'
 import Button from '../objects/buttons/Button'
 import ClickableImage from '../objects/images/ClickableImage'
 import Image from '../objects/images/Image'
 import { Text } from '../objects/texts/Text'
 import BasketClickableImage from '../objects/images/BasketClickableImage'
-import { sceneManager } from '../game'
+import { gameManager } from '../game'
 
 type SceneParam = {
     skin: string
@@ -27,7 +27,9 @@ export default class StartScene extends Phaser.Scene {
             y: 50,
             key: 'settings',
             callback: () => {
-                sceneManager.stateMachine.setState('setting', this, { data: 'start' })
+                gameManager
+                    .getSceneManager()
+                    .stateMachine.setState('setting', this, { data: 'start' })
             },
             scale: 0.2 * 1.5,
         })
@@ -76,8 +78,12 @@ export default class StartScene extends Phaser.Scene {
             callback: () => {
                 this.cameras.main.fadeOut(500, 0, 0, 0)
                 this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
-                    if (data.skin) sceneManager.stateMachine.setState('play', this, data)
-                    else sceneManager.stateMachine.setState('play', this, { skin: 'ball' })
+                    if (data.skin)
+                        gameManager.getSceneManager().stateMachine.setState('play', this, data)
+                    else
+                        gameManager
+                            .getSceneManager()
+                            .stateMachine.setState('play', this, { skin: 'ball' })
                 })
             },
         }).setDepth(2)
@@ -108,8 +114,12 @@ export default class StartScene extends Phaser.Scene {
             callback: () => {
                 this.cameras.main.fadeOut(500, 0, 0, 0)
                 this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
-                    if (data.skin) sceneManager.stateMachine.setState('play', this, data)
-                    else sceneManager.stateMachine.setState('play', this, { skin: 'ball' })
+                    if (data.skin)
+                        gameManager.getSceneManager().stateMachine.setState('play', this, data)
+                    else
+                        gameManager
+                            .getSceneManager()
+                            .stateMachine.setState('play', this, { skin: 'ball' })
                 })
             },
             scale: 0.3 * 1.5,
@@ -124,7 +134,7 @@ export default class StartScene extends Phaser.Scene {
             text: '',
             scale: 0.2 * 1.5,
             callback: () => {
-                sceneManager.stateMachine.setState('customize', this)
+                gameManager.getSceneManager().stateMachine.setState('customize', this)
             },
         })
 

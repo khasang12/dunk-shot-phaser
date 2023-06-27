@@ -1,16 +1,16 @@
 import { CANVAS_HEIGHT, CANVAS_WIDTH } from '../constants'
-import { sceneManager } from '../game'
-import Ball from '../objects/game-objects/ball/Ball'
-import Basket from '../objects/game-objects/basket/Basket'
-import Star from '../objects/game-objects/star/Star'
+import { gameManager } from '../game'
+import Ball from '../objects/game-objects/Ball'
+import Basket from '../objects/game-objects/Basket'
+import Star from '../objects/game-objects/Star'
 import Background from '../objects/images/Background'
 import ClickableImage from '../objects/images/ClickableImage'
 import Image from '../objects/images/Image'
 import FpsText from '../objects/texts/FpsText'
 import { Text } from '../objects/texts/Text'
-import StateMachine from '../states/StateMachine'
 import { Point } from '../types/point'
 import { Sound } from '../types/sound'
+import { estimateVelocityAndAngle } from '../utils/math'
 
 type SceneParam = {
     skin: string
@@ -37,34 +37,18 @@ export default class PlayScene extends Phaser.Scene {
     private ball: Ball
     private star: Star
 
-    // Game Controller Variables
-    private score: number
-    private starCnt: number
-    private isGameEnd = false
+    // Game Control Variables
     private dragStart: Point | null
     private lineGroupBounds: Phaser.Physics.Arcade.Group
     private lineGroupUpperBounds: Phaser.Physics.Arcade.Group
-    private stateMachine: StateMachine
 
     constructor() {
         super({ key: 'PlayScene' })
-
-        this.score = 0
-
-        // Restart 'star'
-        if (!localStorage.getItem('star')) {
-            localStorage.setItem('star', '0')
-            this.starCnt = 0
-        } else {
-            this.starCnt = parseInt(<string>localStorage.getItem('star'))
-        }
     }
 
     public create(data: SceneParam) {
         // Reset Vars
-        this.score = 0
-        this.isGameEnd = false
-        this.starCnt = 0
+        gameManager.getScoreManager().reset()
         this.netAudio = this.sound.add('net')
         this.shootAudio = this.sound.add('shoot')
         this.clickAudio = this.sound.add('click')
@@ -102,7 +86,7 @@ export default class PlayScene extends Phaser.Scene {
 
     private onPointerUp(pointer: Phaser.Input.Pointer) {
         if (this.dragStart) {
-            const [velocity, angle] = this.estimateVelocityAndAngle(pointer)
+            const [velocity, angle] = estimateVelocityAndAngle(this.dragStart, pointer)
             this.curBasket.stateMachine.setState('idle')
 
             this.ball.stateMachine.setState(
@@ -118,8 +102,8 @@ export default class PlayScene extends Phaser.Scene {
     }
 
     private onPointerMove(pointer: Phaser.Input.Pointer) {
-        if (pointer.isDown) {
-            const [velocity, angle] = this.estimateVelocityAndAngle(pointer)
+        if (pointer.isDown && this.dragStart) {
+            const [velocity, angle] = estimateVelocityAndAngle(this.dragStart, pointer)
             this.curBasket.stateMachine.setState('snipe', angle)
             this.ball.stateMachine.setState(
                 'snipe',
@@ -127,29 +111,6 @@ export default class PlayScene extends Phaser.Scene {
                 Math.PI / 2 - this.curBasket.rotation
             )
         }
-    }
-
-    private estimateVelocityAndAngle(pointer: Phaser.Input.Pointer): number[] {
-        if (this.dragStart) {
-            // calculate the angle between the bird and the pointer
-            const angle = Phaser.Math.Angle.Between(
-                this.dragStart.x,
-                this.dragStart.y,
-                pointer.x,
-                pointer.y
-            )
-
-            // Calculate the distance and angle between the starting position of the drag and the current pointer position
-            const distance = Phaser.Math.Distance.Between(
-                this.dragStart.x,
-                this.dragStart.y,
-                pointer.x,
-                pointer.y
-            )
-
-            return [distance, angle]
-        }
-        return [0, 0]
     }
 
     private createAssets() {
@@ -188,7 +149,7 @@ export default class PlayScene extends Phaser.Scene {
             y: 50,
             key: 'pause',
             callback: () => {
-                sceneManager.stateMachine.setState('pause', this)
+                gameManager.getSceneManager().stateMachine.setState('pause', this)
             },
             scale: 0.12,
         })
@@ -205,7 +166,7 @@ export default class PlayScene extends Phaser.Scene {
             scene: this,
             x: W - 40,
             y: 50,
-            msg: this.starCnt.toString(),
+            msg: '0',
             style: {
                 fontFamily: 'MilkyHoney',
                 fontSize: '45px',
@@ -218,7 +179,7 @@ export default class PlayScene extends Phaser.Scene {
             scene: this,
             x: W / 2,
             y: H / 2 - 120,
-            msg: this.score.toString(),
+            msg: gameManager.getScoreManager().getCurScore().toString(),
             style: { fontSize: '150px', color: '#ababab', fontStyle: 'bold' },
         })
 
@@ -334,9 +295,8 @@ export default class PlayScene extends Phaser.Scene {
 
     private async onHitLowerBound() {
         this.gameOverAudio.play()
-        this.saveScore()
-        this.isGameEnd = true
-        this.scene.start('GameOverScene', { data: this.score })
+        gameManager.getScoreManager().saveScoreToLocalStorage()
+        this.scene.start('GameOverScene', { data: gameManager.getScoreManager().getCurScore() })
     }
 
     private onHitCurrentBasket() {
@@ -359,23 +319,23 @@ export default class PlayScene extends Phaser.Scene {
                 'idle',
                 this.nextBasket.x,
                 this.nextBasket.y,
-                this.score
+                gameManager.getScoreManager().getCurScore()
             )
             if (this.ball.isPowerUp()) bonus += 1
             if (this.nextBasket.rotation - -veloAngle <= 0.2) {
                 bonus += 1
                 this.perfectText.emitTextFadeInOut(this.nextBasket.x, this.nextBasket.y - 50, 1000)
                 if (Math.abs(this.ball.getBounds().centerX - this.star.getBounds().centerX) < 50) {
-                    this.starCnt++
+                    gameManager.getScoreManager().incrementStar()
                     this.clickAudio.play()
-                    this.scoreText.text = this.starCnt.toString()
+                    this.scoreText.setText(gameManager.getScoreManager().getCurStar().toString())
                 }
             }
             this.incScoreText.setText('+' + bonus.toString())
             this.ball.disablePowerUp()
-            this.score += bonus
+            gameManager.getScoreManager().incrementScore(bonus)
             this.incScoreText.emitTextFadeInOut(this.nextBasket.x, this.nextBasket.y, 1000)
-            this.curScoreText.text = this.score.toString()
+            this.curScoreText.text = gameManager.getScoreManager().getCurScore().toString()
             this.curBasket.stateMachine.setState('transit', 1)
             this.nextBasket.stateMachine.setState('transit', 0)
             this.curBasket.moveFollower(this.star)
@@ -386,25 +346,5 @@ export default class PlayScene extends Phaser.Scene {
             this.nextBasket = temp
             this.curBasket.rotation = 0
         }
-    }
-
-    private saveScore() {
-        const curHighScore = localStorage.getItem('high-score')
-        if (curHighScore == null) {
-            localStorage.setItem('high-score', this.score.toString())
-        } else {
-            localStorage.setItem(
-                'high-score',
-                Math.max(parseInt(curHighScore), this.score).toString()
-            )
-        }
-        localStorage.setItem(
-            'star',
-            (
-                (localStorage.getItem('star')
-                    ? parseInt(<string>localStorage.getItem('star'))
-                    : 0) + this.starCnt
-            ).toString()
-        )
     }
 }

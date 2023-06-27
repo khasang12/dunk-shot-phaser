@@ -1,8 +1,9 @@
-import GameStateMachine from './GameStateMachine'
+import GameStateMachine from '../states/GameStateMachine'
 
 export default class SceneManager {
+    private static instance: SceneManager
     public stateMachine: GameStateMachine
-    constructor() {
+    private constructor() {
         this.stateMachine = new GameStateMachine(this, 'scene')
 
         this.stateMachine
@@ -30,6 +31,13 @@ export default class SceneManager {
             .addState('customize', {
                 onEnter: this.onCustomizeEnter,
             })
+    }
+
+    public static getInstance(): SceneManager {
+        if (!SceneManager.instance) {
+            SceneManager.instance = new SceneManager()
+        }
+        return SceneManager.instance
     }
 
     public onPreloadEnter(scene: Phaser.Scene) {
