@@ -1,13 +1,16 @@
-import { BASKET_EFFECTS, CANVAS_HEIGHT, CANVAS_WIDTH } from '../constants'
+import { CANVAS_HEIGHT, CANVAS_WIDTH, COLLISION_EVENTS } from '../constants'
 import { gameManager } from '../game'
+import EventManager from '../manager/EventManager'
 import Ball from '../objects/game-objects/Ball'
 import Basket from '../objects/game-objects/Basket'
+import BasketController from '../objects/game-objects/BasketController'
 import Star from '../objects/game-objects/Star'
 import Background from '../objects/images/Background'
 import ClickableImage from '../objects/images/ClickableImage'
 import Image from '../objects/images/Image'
 import FpsText from '../objects/texts/FpsText'
 import { Text } from '../objects/texts/Text'
+import IObserver from '../types/observer'
 import { Point } from '../types/point'
 import { Sound } from '../types/sound'
 import { estimateVelocityAndAngle } from '../utils/math'
@@ -16,7 +19,7 @@ type SceneParam = {
     skin: string
 }
 
-export default class PlayScene extends Phaser.Scene {
+export default class PlayScene extends Phaser.Scene implements IObserver {
     // Background & Assets & Texts
     private background: Background
     private netAudio: Sound
@@ -32,23 +35,27 @@ export default class PlayScene extends Phaser.Scene {
     private fps: FpsText
 
     // GameObjects
-    private curBasket: Basket
-    private nextBasket: Basket
+    /* private curBasket: Basket
+    private nextBasket: Basket */
     private ball: Ball
     private star: Star
 
     // Game Control Variables
+    private basketCtrl: BasketController
+    private eventManager: EventManager
     private dragStart: Point | null
     private lineGroupBounds: Phaser.Physics.Arcade.Group
     private lineGroupUpperBounds: Phaser.Physics.Arcade.Group
 
     constructor() {
         super({ key: 'PlayScene' })
+        this.basketCtrl = new BasketController()
     }
 
     public create(data: SceneParam) {
         // Reset Vars
         gameManager.getScoreManager().reset()
+        this.eventManager = new EventManager()
         this.netAudio = this.sound.add('net')
         this.shootAudio = this.sound.add('shoot')
         this.clickAudio = this.sound.add('click')
@@ -56,38 +63,42 @@ export default class PlayScene extends Phaser.Scene {
 
         // Create Objects & Events
         this.createAssets()
-        this.createWall()
         this.createObjects(data)
-        this.createEventListeners()
+        this.createWall()
+        this.subscribe()
     }
 
     public update(dt: number) {
         this.ball.update(dt)
         this.updateBackground()
-        if (this.ball.y > CANVAS_HEIGHT) {
-            this.onHitLowerBound()
-        }
+
+        if (this.ball.y > CANVAS_HEIGHT) this.eventManager.notify(COLLISION_EVENTS['LOWER_BOUND'])
 
         if (
-            (this.ball.body?.velocity.y || 0) > 0 &&
-            this.physics.collide(this.ball, this.curBasket.bodyGroup) &&
-            this.ball.body?.touching.down
+            this.ball.isFlyingDown() &&
+            this.physics.collide(this.ball, this.basketCtrl.getCur().bodyGroup)
         )
-            this.onHitCurrentBasket()
+            this.eventManager.notify(COLLISION_EVENTS['CURRENT_BASKET'])
 
-        if (this.physics.overlap(this.ball, this.nextBasket.openGroup)) this.onHitNextBasket()
+        if (this.physics.overlap(this.ball, this.basketCtrl.getNext().openGroup))
+            this.eventManager.notify(COLLISION_EVENTS['NEXT_BASKET'])
 
-        if (this.physics.collide(this.ball, this.nextBasket.bodyGroup)) this.onHitObstacle()
+        if (this.physics.collide(this.ball, this.basketCtrl.getNext().bodyGroup))
+            this.eventManager.notify(COLLISION_EVENTS['OBSTACLE'])
     }
 
     private onPointerDown(pointer: Phaser.Input.Pointer) {
         this.dragStart = { x: pointer.x, y: pointer.y }
     }
 
-    private onPointerUp(pointer: Phaser.Input.Pointer) {
+    private onPointerUp(_pointer: Phaser.Input.Pointer) {
         if (this.dragStart) {
-            this.curBasket.stateMachine.setState('idle')
-            this.ball.stateMachine.setState('fly', this.curBasket.x, this.curBasket.y)
+            this.basketCtrl.getCur().stateMachine.setState('idle')
+            this.ball.stateMachine.setState(
+                'fly',
+                this.basketCtrl.getCur().x,
+                this.basketCtrl.getCur().y
+            )
             this.dragStart = null
             this.shootAudio.play()
         }
@@ -96,11 +107,11 @@ export default class PlayScene extends Phaser.Scene {
     private onPointerMove(pointer: Phaser.Input.Pointer) {
         if (pointer.isDown && this.dragStart) {
             const [velocity, angle] = estimateVelocityAndAngle(this.dragStart, pointer)
-            this.curBasket.stateMachine.setState('snipe', velocity, angle)
+            this.basketCtrl.getCur().stateMachine.setState('snipe', velocity, angle)
             this.ball.stateMachine.setState(
                 'snipe',
                 velocity,
-                Math.PI / 2 - this.curBasket.rotation
+                Math.PI / 2 - this.basketCtrl.getCur().rotation
             )
         }
     }
@@ -229,8 +240,7 @@ export default class PlayScene extends Phaser.Scene {
             key: 'star',
             scale: 0.32,
         })
-
-        this.curBasket = new Basket({
+        const curBasket = new Basket({
             scene: this,
             x: 130,
             y: CANVAS_HEIGHT / 2 + 200,
@@ -242,8 +252,9 @@ export default class PlayScene extends Phaser.Scene {
         })
             .setDepth(2)
             .setMaxVelocity(0, 0)
+        this.basketCtrl.setCur(curBasket)
 
-        this.nextBasket = new Basket({
+        const nextBasket = new Basket({
             scene: this,
             x: CANVAS_WIDTH - 140,
             y: CANVAS_HEIGHT / 2 - 200,
@@ -256,6 +267,8 @@ export default class PlayScene extends Phaser.Scene {
             .setDepth(2)
             .setMaxVelocity(0, 0)
 
+        this.basketCtrl.setNext(nextBasket)
+
         this.ball = new Ball({
             scene: this,
             x: 125,
@@ -267,7 +280,7 @@ export default class PlayScene extends Phaser.Scene {
         if (data) this.ball.setTexture(data.skin)
     }
 
-    private createEventListeners() {
+    private subscribe() {
         this.input.on('pointerdown', this.onPointerDown, this)
         this.input.on('pointermove', this.onPointerMove, this)
         this.input.on('pointerup', this.onPointerUp, this)
@@ -275,35 +288,58 @@ export default class PlayScene extends Phaser.Scene {
         this.physics.add.collider(this.ball, [
             this.lineGroupUpperBounds,
             this.lineGroupBounds,
-            this.nextBasket.edgeGroup,
+            this.basketCtrl.getNext().edgeGroup,
         ])
+
+        this.eventManager.subscribe(this)
+        this.eventManager.subscribe(this.ball)
+        this.eventManager.subscribe(this.basketCtrl)
     }
 
     private updateBackground() {
         this.fps.update()
         this.background.tilePositionY -= 1
-        this.cameras.main.setScroll(this.cameras.main.scrollX, this.ball.y - this.curBasket.y)
+        this.cameras.main.setScroll(
+            this.cameras.main.scrollX,
+            this.ball.y - this.basketCtrl.getCur().y
+        )
     }
 
-    private async onHitLowerBound() {
+    public onNotify(e: number): void {
+        switch (e) {
+            case COLLISION_EVENTS['LOWER_BOUND']:
+                this.onHitLowerBound()
+                break
+            case COLLISION_EVENTS['CURRENT_BASKET']:
+                this.onHitCurrent()
+                break
+            case COLLISION_EVENTS['NEXT_BASKET']:
+                this.onHitNext()
+        }
+    }
+
+    private onHitLowerBound() {
         this.gameOverAudio.play()
         gameManager.getScoreManager().saveScoreToLocalStorage()
-        const name = this.firebase.getUser().displayName
-        this.firebase.addHighScore(name, gameManager.getScoreManager().getCurScore())
-        this.scene.start('GameOverScene', { data: gameManager.getScoreManager().getCurScore() })
+        this.firebase.addHighScore(
+            this.firebase.getUser().displayName,
+            gameManager.getScoreManager().getCurScore()
+        )
+        this.scene.start('GameOverScene', {
+            data: gameManager.getScoreManager().getCurScore(),
+        })
     }
 
-    private onHitCurrentBasket() {
-        this.curBasket.reset()
-        this.ball.stateMachine.setState('idle', this.curBasket.x, this.curBasket.y)
+    private onHitCurrent() {
+        this.ball.stateMachine.setState(
+            'idle',
+            this.basketCtrl.getCur().x,
+            this.basketCtrl.getCur().y
+        )
         this.netAudio.play()
     }
 
-    private onHitObstacle() {
-        this.nextBasket.vibrateX()
-    }
-
-    private onHitNextBasket() {
+    private onHitNext() {
         if (this.ball.body) {
             let bonus = 0
             const veloAngle = Math.atan2(this.ball.body?.velocity.y, this.ball.body?.velocity.x)
@@ -311,51 +347,37 @@ export default class PlayScene extends Phaser.Scene {
             bonus += 1
             this.ball.stateMachine.setState(
                 'idle',
-                this.nextBasket.x,
-                this.nextBasket.y,
+                this.basketCtrl.getNext().x,
+                this.basketCtrl.getNext().y,
                 gameManager.getScoreManager().getCurScore()
             )
-            if (this.nextBasket.rotation - -veloAngle <= 0.2) {
+            if (this.basketCtrl.getNext().rotation - -veloAngle <= 0.2) {
                 bonus += 1
-                this.perfectText.emitTextFadeInOut(this.nextBasket.x, this.nextBasket.y - 50, 1000)
+                this.perfectText.emitTextFadeInOut(
+                    this.basketCtrl.getNext().x,
+                    this.basketCtrl.getNext().y - 50,
+                    1000
+                )
                 if (Math.abs(this.ball.getBounds().centerX - this.star.getBounds().centerX) < 50) {
                     gameManager.getScoreManager().incrementStar()
                     this.clickAudio.play()
                     this.scoreText.setText(gameManager.getScoreManager().getCurStar().toString())
                 }
             }
-            if (this.ball.isPowerUp()) {
-                this.cameras.main.flash()
-                bonus += 1
-                this.ball.disableSmoke()
-            }
+            if (this.ball.isPowerUp()) bonus += 1
             this.incScoreText.setText('+' + bonus.toString())
-            this.ball.disablePowerUp()
             gameManager.getScoreManager().incrementScore(bonus)
-            this.incScoreText.emitTextFadeInOut(this.nextBasket.x, this.nextBasket.y, 1000)
+            this.incScoreText.emitTextFadeInOut(
+                this.basketCtrl.getNext().x,
+                this.basketCtrl.getNext().y,
+                1000
+            )
             const curScore = gameManager.getScoreManager().getCurScore()
             this.curScoreText.text = curScore.toString()
-            if (curScore % 5 == 0 && curScore > 0) this.ball.emitSmokeParticle()
-            this.updateBaskets(curScore)
+            this.time.delayedCall(0, () => {
+                this.basketCtrl.getNext().moveFollower(this.star)
+                this.basketCtrl.getCur().moveFollower(this.ball)
+            })
         }
-    }
-
-    private updateBaskets(curScore: number) {
-        if (curScore >= 15)
-            this.curBasket.stateMachine.setState('transit', 1, BASKET_EFFECTS['ROTATE'])
-        else if (curScore >= 10)
-            this.curBasket.stateMachine.setState('transit', 1, BASKET_EFFECTS['MOVE_X'])
-        else if (curScore >= 5)
-            this.curBasket.stateMachine.setState('transit', 1, BASKET_EFFECTS['MOVE_Y'])
-        else this.curBasket.stateMachine.setState('transit', 1)
-
-        this.nextBasket.stateMachine.setState('transit', 0)
-        this.curBasket.moveFollower(this.star)
-        this.nextBasket.moveFollower(this.ball)
-
-        const temp = this.curBasket
-        this.curBasket = this.nextBasket
-        this.nextBasket = temp
-        this.curBasket.rotation = 0
     }
 }

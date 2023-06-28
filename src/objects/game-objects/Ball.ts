@@ -1,11 +1,13 @@
-import { CANVAS_HEIGHT, CANVAS_WIDTH, SPEED_LIMIT } from '../../constants'
+import { CANVAS_HEIGHT, CANVAS_WIDTH, COLLISION_EVENTS, SPEED_LIMIT } from '../../constants'
+import { gameManager } from '../../game'
 import StateMachine from '../../states/StateMachine'
 import { IGameObject } from '../../types/object'
+import IObserver from '../../types/observer'
 import { Point } from '../../types/point'
 import { getProjectX, getProjectY } from '../../utils/math'
 import BodyObject from './BodyObject'
 
-export default class Ball extends BodyObject {
+export default class Ball extends BodyObject implements IObserver {
     private speed: number
     private radian: number
     private elapsed: number
@@ -85,7 +87,6 @@ export default class Ball extends BodyObject {
             frequency: 60,
         })
         this.smokeParticle.startFollow(this, -90, -120, true)
-        this.smokeParticle.start()
     }
 
     public disableSmoke() {
@@ -137,7 +138,8 @@ export default class Ball extends BodyObject {
     }
 
     public onSnipeEnter(data: number[]) {
-        [this.speed, this.radian] = data
+        this.speed = data[0]
+        this.radian = data[1]
         this.trajectory = []
         this.points = this.scene.add.graphics()
         this.points.fillStyle(0xffa500, 1)
@@ -171,5 +173,21 @@ export default class Ball extends BodyObject {
 
     public disablePowerUp() {
         this.powerUp = false
+    }
+
+    public isFlyingDown() {
+        return (this.body?.velocity.y || 0) > 0
+    }
+
+    public onNotify(e: number) {
+        const curScore = gameManager.getScoreManager().getCurScore()
+        switch (e) {
+            case COLLISION_EVENTS['NEXT_BASKET']:
+                if (this.isPowerUp()) {
+                    this.disableSmoke()
+                    this.disablePowerUp()
+                }
+                if (curScore % 5 == 0 && curScore > 0) this.emitSmokeParticle()
+        }
     }
 }
