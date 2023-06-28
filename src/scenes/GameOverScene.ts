@@ -25,18 +25,18 @@ export default class GameOverScene extends Phaser.Scene {
             data.forEach((item: LeaderboardItem, i: number) => {
                 display += `\n${i + 1}. ${item.name} ${item.score}`
             })
-            this.boardText.setText(display)
+            if (this.boardText) this.boardText.setText(display)
         })
     }
 
     public update(time: number) {
-        if (Math.floor(time / 1000) % 10) {
-            this.updateLeaderboard() // update after each K secs
+        if (Math.floor(time / 1000) % 3 == 0) {
+            this.updateLeaderboard() // update after each 3 secs
         }
     }
 
     public create(data: SceneParam) {
-        this.cameras.main.fadeIn(500, 0, 0, 0)
+        //this.cameras.main.fadeIn(500, 0, 0, 0)
 
         this.boardText = new Text({
             scene: this,

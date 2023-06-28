@@ -15,16 +15,6 @@ export default class Star extends BodyObject {
         this.setVisible(true)
         this.scene.add.existing(this)
 
-        const fx1 = this.postFX.addGlow(0xffffff, 0, 0, false, 0.1, 24)
-
-        this.scene.tweens.add({
-            targets: fx1,
-            outerStrength: 7,
-            yoyo: true,
-            loop: -1,
-            ease: 'sine.inout',
-        })
-
         this.scene.tweens.add({
             targets: this,
             scaleX: 0.25,
@@ -48,10 +38,16 @@ export default class Star extends BodyObject {
     }
 
     public onEnableEnter() {
-        this.enableBody(false)
+        if (this.visible == false) {
+            this.enableBody(false)
+            this.setVisible(true)
+        }
     }
 
     public onDisableEnter() {
-        this.disableBody(false)
+        if (this.visible == true) {
+            this.disableBody(false)
+            this.setVisible(false)
+        }
     }
 }

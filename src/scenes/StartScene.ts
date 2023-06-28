@@ -19,7 +19,7 @@ export default class StartScene extends Phaser.Scene {
     }
 
     public create(data: SceneParam) {
-        this.cameras.main.fadeIn(500, 0, 0, 0)
+        //this.cameras.main.fadeIn(500, 0, 0, 0)
 
         const settingsImg = new ClickableImage({
             scene: this,
