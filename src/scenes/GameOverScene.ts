@@ -25,14 +25,9 @@ export default class GameOverScene extends Phaser.Scene {
             data.forEach((item: LeaderboardItem, i: number) => {
                 display += `\n${i + 1}. ${item.name} ${item.score}`
             })
-            if (this.boardText) this.boardText.setText(display)
-        })
-    }
 
-    public update(time: number) {
-        if (Math.floor(time / 1000) % 3 == 0) {
-            this.updateLeaderboard() // update after each 3 secs
-        }
+            if (this.boardText && display) this.boardText.setText(display)
+        })
     }
 
     public create(data: SceneParam) {
@@ -139,5 +134,15 @@ export default class GameOverScene extends Phaser.Scene {
             },
             scale: 0.32,
         })
+    }
+
+    public update(time: number) {
+        try {
+            if (Math.floor(time / 1000) % 3 == 0) {
+                this.updateLeaderboard() // update after each 3 secs
+            }
+        } catch (err) {
+            console.log(err)
+        }
     }
 }

@@ -65,8 +65,8 @@ export default class Basket extends BodyObject {
         ]
 
         this.edgeRects = [
-            this.scene.add.rectangle(this.x - 70, this.y - 25, 5, 5),
-            this.scene.add.rectangle(this.x + 70, this.y - 25, 5, 5),
+            this.scene.add.rectangle(this.x - 70, this.y - 15, 5, 5),
+            this.scene.add.rectangle(this.x + 70, this.y - 15, 5, 5),
         ]
 
         this.openRects = [
@@ -97,7 +97,7 @@ export default class Basket extends BodyObject {
 
     private updateEdgeGroup() {
         const alpha = getAngCoeff(this.width, this.height)
-        const l = (getHypot(this.width, this.height) * this.scale) / 2
+        const l = (getHypot(this.width, this.height) * (this.scale - 0.1)) / 2
         this.edgeGroup.setX(
             this.x - getProjectX(l, -this.rotation - alpha),
             getProjectX(l, -this.rotation + alpha) + getProjectX(l, -this.rotation - alpha)
@@ -110,7 +110,7 @@ export default class Basket extends BodyObject {
 
     private updateOpenGroup() {
         const alpha = getAngCoeff(this.width, this.height)
-        const l = (getHypot(this.width, this.height) * (this.scale - 0.1)) / 4
+        const l = (getHypot(this.width, this.height) * (this.scale - 0.3)) / 4
         this.openGroup.setX(
             this.x - getProjectX(l, -this.rotation - alpha),
             getProjectX(l, -this.rotation + alpha) + getProjectX(l, -this.rotation - alpha)
@@ -160,8 +160,8 @@ export default class Basket extends BodyObject {
 
     public onIdleEnter() {
         this.clearEffect()
-        this.updateEdgeGroup()
         this.setScale(this.scaleX, this.scaleX)
+        this.updateEdgeGroup()
     }
 
     public onSnipeEnter(data: number[]) {
@@ -169,7 +169,7 @@ export default class Basket extends BodyObject {
         this.rotation = angle - Math.PI / 2
         this.setScale(
             this.scaleX,
-            Math.max((this.scaleX * 2 * Math.min(velocity, SPEED_LIMIT)) / SPEED_LIMIT, this.scaleX)
+            Math.max((this.scaleX * 1.2 * Math.min(velocity, SPEED_LIMIT)) / SPEED_LIMIT, this.scaleX)
         )
         this.updateEdgeGroup()
     }

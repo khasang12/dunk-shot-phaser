@@ -4,7 +4,7 @@ import StateMachine from '../../states/StateMachine'
 import { IGameObject } from '../../types/object'
 import IObserver from '../../types/observer'
 import { Point } from '../../types/point'
-import { getProjectX, getProjectY } from '../../utils/math'
+import { getHypot, getProjectX, getProjectY } from '../../utils/math'
 import BodyObject from './BodyObject'
 
 export default class Ball extends BodyObject implements IObserver {
@@ -180,8 +180,16 @@ export default class Ball extends BodyObject implements IObserver {
         return (this.body?.velocity.y || 0) > 0
     }
 
+    public isOverlap() {
+        console.log(this.body?.overlapX, this.body?.overlapY)
+        const h = this.body ? getHypot(this.body?.overlapX, this.body?.overlapY) : 0
+        return h > 0.1 * this.width
+    }
+
     public isOutOfBounds() {
-        return this.x - this.width*this.scale < 0 || this.x > CANVAS_WIDTH - this.width*this.scale
+        return (
+            this.x - this.width * this.scale < 0 || this.x > CANVAS_WIDTH - this.width * this.scale
+        )
     }
 
     public onNotify(e: number) {

@@ -78,7 +78,10 @@ export default class PlayScene extends Phaser.Scene implements IObserver {
         )
             this.eventManager.notify(COLLISION_EVENTS['CURRENT_BASKET'])
 
-        if (this.physics.overlap(this.ball, this.basketCtrl.getNext().openGroup))
+        if (
+            this.physics.overlap(this.ball, this.basketCtrl.getNext().openGroup) &&
+            this.physics.overlap(this.ball, this.basketCtrl.getNext().bodyGroup)
+        )
             this.eventManager.notify(COLLISION_EVENTS['NEXT_BASKET'])
 
         if (this.physics.collide(this.ball, this.basketCtrl.getNext().bodyGroup))
