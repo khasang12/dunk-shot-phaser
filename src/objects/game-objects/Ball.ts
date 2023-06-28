@@ -1,11 +1,13 @@
-import { CANVAS_HEIGHT, CANVAS_WIDTH, SPEED_LIMIT } from '../../constants'
+import { CANVAS_HEIGHT, CANVAS_WIDTH, COLLISION_EVENTS, SPEED_LIMIT } from '../../constants'
+import { gameManager } from '../../game'
 import StateMachine from '../../states/StateMachine'
 import { IGameObject } from '../../types/object'
+import IObserver from '../../types/observer'
 import { Point } from '../../types/point'
 import { getProjectX, getProjectY } from '../../utils/math'
 import BodyObject from './BodyObject'
 
-export default class Ball extends BodyObject {
+export default class Ball extends BodyObject implements IObserver {
     private speed: number
     private radian: number
     private elapsed: number
@@ -15,6 +17,7 @@ export default class Ball extends BodyObject {
     public points: Phaser.GameObjects.Graphics
     public stateMachine: StateMachine
     private smokeParticle: Phaser.GameObjects.Particles.ParticleEmitter
+    private flameParticle: Phaser.GameObjects.Particles.ParticleEmitter
 
     constructor(o: IGameObject) {
         super(o)
@@ -85,7 +88,6 @@ export default class Ball extends BodyObject {
             frequency: 60,
         })
         this.smokeParticle.startFollow(this, -90, -120, true)
-        this.smokeParticle.start()
     }
 
     public disableSmoke() {
@@ -133,11 +135,12 @@ export default class Ball extends BodyObject {
     }
 
     public onFlyUpdate(_delta: number) {
-        if (this.isMoving) this.rotation += 0.1
+        if (this.isMoving) this.rotation += 0.2
     }
 
     public onSnipeEnter(data: number[]) {
-        [this.speed, this.radian] = data
+        this.speed = data[0]
+        this.radian = data[1]
         this.trajectory = []
         this.points = this.scene.add.graphics()
         this.points.fillStyle(0xffa500, 1)
@@ -171,5 +174,45 @@ export default class Ball extends BodyObject {
 
     public disablePowerUp() {
         this.powerUp = false
+    }
+
+    public isFlyingDown() {
+        return (this.body?.velocity.y || 0) > 0
+    }
+
+    public isOutOfBounds() {
+        return this.x - this.width*this.scale < 0 || this.x > CANVAS_WIDTH - this.width*this.scale
+    }
+
+    public onNotify(e: number) {
+        const curScore = gameManager.getScoreManager().getCurScore()
+        switch (e) {
+            case COLLISION_EVENTS['NEXT_BASKET']:
+                if (this.isPowerUp()) {
+                    this.disableSmoke()
+                    this.disablePowerUp()
+                }
+                if (curScore % 5 == 0 && curScore > 0) this.emitSmokeParticle()
+                break
+            case COLLISION_EVENTS['WALL']:
+                this.flameParticle = this.scene.add.particles(this.x, this.y, 'flares', {
+                    frame: 'white',
+                    color: [0xfacc22, 0xf89800, 0xf83600, 0x9f0404],
+                    colorEase: 'quad.out',
+                    lifespan: 100,
+                    rotate: 90,
+                    scale: { start: 0.7, end: 0, ease: 'sine.out' },
+                    speed: 200,
+                    advance: 500,
+                    frequency: 60,
+                    blendMode: 'ADD',
+                    duration: 200,
+                })
+                this.flameParticle.setDepth(1)
+                // When particles are complete, destroy them
+                this.flameParticle.once('complete', () => {
+                    this.flameParticle.destroy()
+                })
+        }
     }
 }

@@ -8,6 +8,7 @@ import { CANVAS_HEIGHT, CANVAS_WIDTH } from './constants'
 import SettingScene from './scenes/SettingScene'
 import CustomizeScene from './scenes/CustomizeScene'
 import GameManager from './manager/GameManager'
+import FirebasePlugin from './plugins/FirebasePlugin'
 
 export const config = {
     type: Phaser.AUTO,
@@ -33,8 +34,18 @@ export const config = {
     physics: {
         default: 'arcade',
         arcade: {
-            debug: false
+            debug: false,
         },
+    },
+    plugins: {
+        global: [
+            {
+                key: 'FirebasePlugin',
+                plugin: FirebasePlugin,
+                start: true,
+                mapping: 'firebase',
+            },
+        ],
     },
 }
 

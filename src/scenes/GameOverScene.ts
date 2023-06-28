@@ -8,13 +8,43 @@ type SceneParam = {
     data: number
 }
 
+type LeaderboardItem = {
+    name: string
+    score: number
+}
+
 export default class GameOverScene extends Phaser.Scene {
+    private boardText: Text
     constructor() {
         super({ key: 'GameOverScene' })
     }
 
+    public updateLeaderboard() {
+        let display = ''
+        this.firebase.getHighScores().then((data: LeaderboardItem[]) => {
+            data.forEach((item: LeaderboardItem, i: number) => {
+                display += `\n${i + 1}. ${item.name} ${item.score}`
+            })
+            if (this.boardText) this.boardText.setText(display)
+        })
+    }
+
+    public update(time: number) {
+        if (Math.floor(time / 1000) % 3 == 0) {
+            this.updateLeaderboard() // update after each 3 secs
+        }
+    }
+
     public create(data: SceneParam) {
-        this.cameras.main.fadeIn(500, 0, 0, 0)
+        //this.cameras.main.fadeIn(500, 0, 0, 0)
+
+        this.boardText = new Text({
+            scene: this,
+            x: CANVAS_WIDTH / 2,
+            y: 620,
+            msg: 'Fetching...',
+            style: { fontFamily: 'MilkyHoney', fontSize: '35px', color: '#e2224c' },
+        }).setDepth(10)
 
         const star = new Image({
             scene: this,
@@ -39,7 +69,7 @@ export default class GameOverScene extends Phaser.Scene {
         const bestScoreMsgText = new Text({
             scene: this,
             x: CANVAS_WIDTH / 2,
-            y: CANVAS_HEIGHT / 2 - 370,
+            y: CANVAS_HEIGHT / 2 - 470,
             msg: 'BEST SCORE',
             style: { fontSize: '50px', color: '#ffa500', fontStyle: 'bold' },
         })
@@ -47,34 +77,38 @@ export default class GameOverScene extends Phaser.Scene {
         const bestScoreText = new Text({
             scene: this,
             x: CANVAS_WIDTH / 2,
-            y: CANVAS_HEIGHT / 2 - 280,
+            y: CANVAS_HEIGHT / 2 - 380,
             msg: gameManager.getScoreManager().getBestScore().toString(),
             style: { fontSize: '90px', color: '#ffa500', fontStyle: 'bold' },
-        })
+        }).setAlpha(0)
 
         const scoreText = new Text({
             scene: this,
             x: CANVAS_WIDTH / 2,
-            y: CANVAS_HEIGHT / 2 - 120,
-            msg: data.data.toString(),
+            y: CANVAS_HEIGHT / 2 - 220,
+            msg: '0',
             style: { fontSize: '180px', color: '#ababab', fontStyle: 'bold' },
         })
-
-        const adImg = new ClickableImage({
-            scene: this,
-            x: CANVAS_WIDTH / 2,
-            y: CANVAS_HEIGHT / 2 + 100,
-            key: 'ad',
-            callback: () => {
-                window.location.href = 'https://www.youtube.com/'
+        // Create a new tween object to animate the score
+        this.tweens.add({
+            targets: { score: '0' },
+            score: data.data.toString(),
+            duration: 1000,
+            ease: 'Power1',
+            onUpdate: function (tween: any) {
+                // Update the score text with the rounded score value
+                scoreText.text = Math.round(tween.targets[0].score).toString()
             },
-            scale: 0.4,
+            onComplete: function () {
+                // Animation complete callback
+                bestScoreText.setAlpha(1)
+            },
         })
 
         const igImg = new ClickableImage({
             scene: this,
             x: CANVAS_WIDTH / 2 - 150,
-            y: CANVAS_HEIGHT / 2 + 300,
+            y: CANVAS_HEIGHT / 2 + 400,
             key: 'ig',
             callback: () => {
                 window.location.href = 'https://www.facebook.com/khasang0412/'
@@ -85,7 +119,7 @@ export default class GameOverScene extends Phaser.Scene {
         const retImg = new ClickableImage({
             scene: this,
             x: CANVAS_WIDTH / 2,
-            y: CANVAS_HEIGHT / 2 + 300,
+            y: CANVAS_HEIGHT / 2 + 400,
             key: 'return',
             callback: () => {
                 this.scene.start('PlayScene')
@@ -96,7 +130,7 @@ export default class GameOverScene extends Phaser.Scene {
         const settingsImg = new ClickableImage({
             scene: this,
             x: CANVAS_WIDTH / 2 + 150,
-            y: CANVAS_HEIGHT / 2 + 300,
+            y: CANVAS_HEIGHT / 2 + 400,
             key: 'settings',
             callback: () => {
                 gameManager

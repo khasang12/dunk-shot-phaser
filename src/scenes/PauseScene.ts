@@ -18,7 +18,7 @@ export default class PauseScene extends Phaser.Scene {
             callback: () => {
                 gameManager
                     .getSceneManager()
-                    .stateMachine.setState('setting', this, { data: 'PauseScene' })
+                    .stateMachine.setState('setting', this, { data: 'pause' })
             },
             scale: 0.32,
         })
