@@ -31,21 +31,21 @@ export const config = {
         SettingScene,
         CustomizeScene,
     ],
+    physics: {
+        default: 'arcade',
+        arcade: {
+            debug: false,
+        },
+    },
     plugins: {
         global: [
             {
                 key: 'FirebasePlugin',
                 plugin: FirebasePlugin,
                 start: true,
-                mapping: 'firebase'
-            }
-        ]
-    },
-    physics: {
-        default: 'arcade',
-        arcade: {
-            debug: false
-        },
+                mapping: 'firebase',
+            },
+        ],
     },
 }
 

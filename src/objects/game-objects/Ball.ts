@@ -17,6 +17,7 @@ export default class Ball extends BodyObject implements IObserver {
     public points: Phaser.GameObjects.Graphics
     public stateMachine: StateMachine
     private smokeParticle: Phaser.GameObjects.Particles.ParticleEmitter
+    private flameParticle: Phaser.GameObjects.Particles.ParticleEmitter
 
     constructor(o: IGameObject) {
         super(o)
@@ -134,7 +135,7 @@ export default class Ball extends BodyObject implements IObserver {
     }
 
     public onFlyUpdate(_delta: number) {
-        if (this.isMoving) this.rotation += 0.1
+        if (this.isMoving) this.rotation += 0.2
     }
 
     public onSnipeEnter(data: number[]) {
@@ -179,6 +180,10 @@ export default class Ball extends BodyObject implements IObserver {
         return (this.body?.velocity.y || 0) > 0
     }
 
+    public isOutOfBounds() {
+        return this.x - this.width*this.scale < 0 || this.x > CANVAS_WIDTH - this.width*this.scale
+    }
+
     public onNotify(e: number) {
         const curScore = gameManager.getScoreManager().getCurScore()
         switch (e) {
@@ -188,6 +193,26 @@ export default class Ball extends BodyObject implements IObserver {
                     this.disablePowerUp()
                 }
                 if (curScore % 5 == 0 && curScore > 0) this.emitSmokeParticle()
+                break
+            case COLLISION_EVENTS['WALL']:
+                this.flameParticle = this.scene.add.particles(this.x, this.y, 'flares', {
+                    frame: 'white',
+                    color: [0xfacc22, 0xf89800, 0xf83600, 0x9f0404],
+                    colorEase: 'quad.out',
+                    lifespan: 100,
+                    rotate: 90,
+                    scale: { start: 0.7, end: 0, ease: 'sine.out' },
+                    speed: 200,
+                    advance: 500,
+                    frequency: 60,
+                    blendMode: 'ADD',
+                    duration: 200,
+                })
+                this.flameParticle.setDepth(1)
+                // When particles are complete, destroy them
+                this.flameParticle.once('complete', () => {
+                    this.flameParticle.destroy()
+                })
         }
     }
 }

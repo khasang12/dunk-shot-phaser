@@ -43,7 +43,7 @@ export default class GameOverScene extends Phaser.Scene {
             x: CANVAS_WIDTH / 2,
             y: 620,
             msg: 'Fetching...',
-            style: { fontFamily: 'MilkyHoney', fontSize: '35px', color: 'black' },
+            style: { fontFamily: 'MilkyHoney', fontSize: '35px', color: '#e2224c' },
         }).setDepth(10)
 
         const star = new Image({
@@ -80,26 +80,30 @@ export default class GameOverScene extends Phaser.Scene {
             y: CANVAS_HEIGHT / 2 - 380,
             msg: gameManager.getScoreManager().getBestScore().toString(),
             style: { fontSize: '90px', color: '#ffa500', fontStyle: 'bold' },
-        })
+        }).setAlpha(0)
 
         const scoreText = new Text({
             scene: this,
             x: CANVAS_WIDTH / 2,
             y: CANVAS_HEIGHT / 2 - 220,
-            msg: data.data.toString(),
+            msg: '0',
             style: { fontSize: '180px', color: '#ababab', fontStyle: 'bold' },
         })
-
-        /* const adImg = new ClickableImage({
-            scene: this,
-            x: CANVAS_WIDTH / 2,
-            y: CANVAS_HEIGHT / 2 + 100,
-            key: 'ad',
-            callback: () => {
-                window.location.href = 'https://www.youtube.com/'
+        // Create a new tween object to animate the score
+        this.tweens.add({
+            targets: { score: '0' },
+            score: data.data.toString(),
+            duration: 1000,
+            ease: 'Power1',
+            onUpdate: function (tween: any) {
+                // Update the score text with the rounded score value
+                scoreText.text = Math.round(tween.targets[0].score).toString()
             },
-            scale: 0.4,
-        }) */
+            onComplete: function () {
+                // Animation complete callback
+                bestScoreText.setAlpha(1)
+            },
+        })
 
         const igImg = new ClickableImage({
             scene: this,

@@ -35,8 +35,6 @@ export default class PlayScene extends Phaser.Scene implements IObserver {
     private fps: FpsText
 
     // GameObjects
-    /* private curBasket: Basket
-    private nextBasket: Basket */
     private ball: Ball
     private star: Star
 
@@ -85,6 +83,14 @@ export default class PlayScene extends Phaser.Scene implements IObserver {
 
         if (this.physics.collide(this.ball, this.basketCtrl.getNext().bodyGroup))
             this.eventManager.notify(COLLISION_EVENTS['OBSTACLE'])
+
+        if (this.ball.isOutOfBounds()) {
+            this.eventManager.notify(COLLISION_EVENTS['WALL'])
+        }
+
+        if (this.physics.overlap(this.ball, this.star)) {
+            this.eventManager.notify(COLLISION_EVENTS['STAR'])
+        }
     }
 
     private onPointerDown(pointer: Phaser.Input.Pointer) {
@@ -315,6 +321,10 @@ export default class PlayScene extends Phaser.Scene implements IObserver {
                 break
             case COLLISION_EVENTS['NEXT_BASKET']:
                 this.onHitNext()
+                break
+            case COLLISION_EVENTS['STAR']:
+                this.onHitStar()
+                break
         }
     }
 
@@ -339,6 +349,13 @@ export default class PlayScene extends Phaser.Scene implements IObserver {
         this.netAudio.play()
     }
 
+    private onHitStar() {
+        gameManager.getScoreManager().incrementStar()
+        this.clickAudio.play()
+        this.scoreText.setText(gameManager.getScoreManager().getCurStar().toString())
+        this.star.stateMachine.setState('disable')
+    }
+
     private onHitNext() {
         if (this.ball.body) {
             let bonus = 0
@@ -351,19 +368,15 @@ export default class PlayScene extends Phaser.Scene implements IObserver {
                 this.basketCtrl.getNext().y,
                 gameManager.getScoreManager().getCurScore()
             )
-            if (this.basketCtrl.getNext().rotation - -veloAngle <= 0.2) {
+            if (this.basketCtrl.getNext().rotation - -veloAngle <= 0.15) {
                 bonus += 1
                 this.perfectText.emitTextFadeInOut(
                     this.basketCtrl.getNext().x,
                     this.basketCtrl.getNext().y - 50,
                     1000
                 )
-                if (Math.abs(this.ball.getBounds().centerX - this.star.getBounds().centerX) < 50) {
-                    gameManager.getScoreManager().incrementStar()
-                    this.clickAudio.play()
-                    this.scoreText.setText(gameManager.getScoreManager().getCurStar().toString())
-                }
             }
+
             if (this.ball.isPowerUp()) bonus += 1
             this.incScoreText.setText('+' + bonus.toString())
             gameManager.getScoreManager().incrementScore(bonus)
@@ -377,6 +390,7 @@ export default class PlayScene extends Phaser.Scene implements IObserver {
             this.time.delayedCall(0, () => {
                 this.basketCtrl.getNext().moveFollower(this.star)
                 this.basketCtrl.getCur().moveFollower(this.ball)
+                this.star.stateMachine.setState('enable')
             })
         }
     }

@@ -21,6 +21,7 @@ export const BASKET_EFFECTS: Readonly<{ [key: string]: number }> = {
 }
 
 export const COLLISION_EVENTS: Readonly<{ [key: string]: number }> = {
+    WALL: 0,
     LOWER_BOUND: 1,
     OBSTACLE: 2,
     CURRENT_BASKET: 3,
