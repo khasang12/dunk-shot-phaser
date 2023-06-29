@@ -1,6 +1,6 @@
-import { BASKET_EFFECTS, CANVAS_HEIGHT, CANVAS_WIDTH, SPEED_LIMIT } from '../../constants'
-import StateMachine from '../../states/StateMachine'
-import { IGameObject } from '../../types/object'
+import { BASKET_EFFECTS, CANVAS_HEIGHT, CANVAS_WIDTH, SPEED_LIMIT } from '../../../constants'
+import StateMachine from '../../../states/StateMachine'
+import { IGameObject } from '../../../types/object'
 import {
     getAngCoeff,
     getHypot,
@@ -8,10 +8,11 @@ import {
     getProjectY,
     randomAngle,
     randomIntegerInRange,
-} from '../../utils/math'
-import Ball from './Ball'
-import BodyObject from './BodyObject'
-import Star from './Star'
+} from '../../../utils/math'
+import Ball from '../ball/Ball'
+import BodyObject from '../BodyObject'
+import Star from '../star/Star'
+import { BASKET_TWEENS_MOVING, BASKET_TWEENS_ROTATING, BASKET_TWEENS_VIBRATING } from './config'
 
 export default class Basket extends BodyObject {
     public stateMachine: StateMachine
@@ -24,6 +25,7 @@ export default class Basket extends BodyObject {
     private tweensX: Phaser.Tweens.Tween
     private tweensY: Phaser.Tweens.Tween
     private tweensAngle: Phaser.Tweens.Tween
+    private newY: number
 
     constructor(o: IGameObject) {
         super(o)
@@ -65,8 +67,8 @@ export default class Basket extends BodyObject {
         ]
 
         this.edgeRects = [
-            this.scene.add.rectangle(this.x - 70, this.y - 25, 5, 5),
-            this.scene.add.rectangle(this.x + 70, this.y - 25, 5, 5),
+            this.scene.add.rectangle(this.x - 70, this.y - 15, 5, 5),
+            this.scene.add.rectangle(this.x + 70, this.y - 15, 5, 5),
         ]
 
         this.openRects = [
@@ -97,7 +99,7 @@ export default class Basket extends BodyObject {
 
     private updateEdgeGroup() {
         const alpha = getAngCoeff(this.width, this.height)
-        const l = (getHypot(this.width, this.height) * this.scale) / 2
+        const l = (getHypot(this.width, this.height) * (this.scale - 0.1)) / 2
         this.edgeGroup.setX(
             this.x - getProjectX(l, -this.rotation - alpha),
             getProjectX(l, -this.rotation + alpha) + getProjectX(l, -this.rotation - alpha)
@@ -110,7 +112,7 @@ export default class Basket extends BodyObject {
 
     private updateOpenGroup() {
         const alpha = getAngCoeff(this.width, this.height)
-        const l = (getHypot(this.width, this.height) * (this.scale - 0.1)) / 4
+        const l = (getHypot(this.width, this.height) * (this.scale - 0.3)) / 4
         this.openGroup.setX(
             this.x - getProjectX(l, -this.rotation - alpha),
             getProjectX(l, -this.rotation + alpha) + getProjectX(l, -this.rotation - alpha)
@@ -149,19 +151,23 @@ export default class Basket extends BodyObject {
 
     public onTransitEnter(data: number[]) {
         const [_W, H] = [CANVAS_WIDTH, CANVAS_HEIGHT]
-        const [state, effect] = data
-        const newY =
-            this.y > H / 2
-                ? randomIntegerInRange(200, H / 2 - 200)
-                : randomIntegerInRange(H / 2, H - 100)
-        this.y = newY
-        this.transition(this, this.x, newY, state == 1 ? true : false, effect)
+        const [state, effect, curHeight] = data
+        if (state == 0) this.transition(this, this.x, this.y, false, effect)
+        else {
+            this.newY = curHeight - randomIntegerInRange(H / 4, H / 3)
+            this.transition(this, this.x, this.newY, true, effect)
+        }
     }
 
     public onIdleEnter() {
         this.clearEffect()
+        this.scene.tweens.add({
+            targets: this,
+            scaleY: this.scaleX,
+            duration: 5000,
+            ease: 'Power2',
+        })
         this.updateEdgeGroup()
-        this.setScale(this.scaleX, this.scaleX)
     }
 
     public onSnipeEnter(data: number[]) {
@@ -169,7 +175,10 @@ export default class Basket extends BodyObject {
         this.rotation = angle - Math.PI / 2
         this.setScale(
             this.scaleX,
-            Math.max((this.scaleX * 2 * Math.min(velocity, SPEED_LIMIT)) / SPEED_LIMIT, this.scaleX)
+            Math.max(
+                (this.scaleX * 1.3 * Math.min(velocity, SPEED_LIMIT)) / SPEED_LIMIT,
+                this.scaleX * 1.2
+            )
         )
         this.updateEdgeGroup()
     }
@@ -188,7 +197,7 @@ export default class Basket extends BodyObject {
             this.transition(
                 obj,
                 this.x + getProjectX(80, Math.PI / 2 - this.rotation),
-                this.y - getProjectY(80, Math.PI / 2 - this.rotation),
+                this.newY - getProjectY(80, Math.PI / 2 - this.rotation),
                 false
             )
             obj.setAlpha(1)
@@ -203,21 +212,15 @@ export default class Basket extends BodyObject {
         this.scene.tweens.add({
             targets: this,
             x: this.x - 10,
-            duration: 20,
-            ease: 'Linear',
-            yoyo: true,
-            repeat: 3,
+            ...BASKET_TWEENS_VIBRATING,
         })
     }
 
     public vibrateY() {
         this.scene.tweens.add({
             targets: this,
-            y: this.x - 10,
-            duration: 20,
-            ease: 'Linear',
-            yoyo: true,
-            repeat: 3,
+            y: this.y - 10,
+            ...BASKET_TWEENS_VIBRATING,
         })
     }
 
@@ -225,15 +228,12 @@ export default class Basket extends BodyObject {
         this.tweensX = this.scene.tweens.add({
             targets: this,
             x: this.x - 25, // Destination position of the object
-            duration: 1000, // Duration of the animation in milliseconds
-            ease: 'Power1',
-            yoyo: true, // Make the tween repeat back and forth
-            repeat: -1, // Repeat the tween indefinitely
             onUpdate: () => {
                 this.updateBodyGroup()
                 this.updateEdgeGroup()
                 this.updateOpenGroup()
             },
+            ...BASKET_TWEENS_MOVING,
         })
     }
 
@@ -241,31 +241,24 @@ export default class Basket extends BodyObject {
         this.tweensY = this.scene.tweens.add({
             targets: this,
             y: this.y + 30,
-            duration: 1000, // Duration of the animation in milliseconds
-            ease: 'Power1',
-            yoyo: true, // Make the tween repeat back and forth
-            repeat: -1, // Repeat the tween indefinitely
             onUpdate: () => {
                 this.updateBodyGroup()
                 this.updateEdgeGroup()
                 this.updateOpenGroup()
             },
+            ...BASKET_TWEENS_MOVING,
         })
     }
 
     public addRotating() {
         this.tweensAngle = this.scene.tweens.add({
             targets: this,
-            angle: Phaser.Math.Between(-45, 45),
-            duration: 1000, // Duration of the animation in milliseconds
-            ease: 'Linear',
-            yoyo: true, // Make the tween repeat back and forth
-            repeat: -1, // Repeat the tween indefinitely
             onUpdate: () => {
                 this.updateBodyGroup()
                 this.updateEdgeGroup()
                 this.updateOpenGroup()
             },
+            ...BASKET_TWEENS_ROTATING,
         })
     }
 

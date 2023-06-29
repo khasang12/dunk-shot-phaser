@@ -1,5 +1,5 @@
 import { CANVAS_HEIGHT, CANVAS_WIDTH } from '../constants'
-import Ball from '../objects/game-objects/Ball'
+import Ball from '../objects/game-objects/ball/Ball'
 import Button from '../objects/buttons/Button'
 import ClickableImage from '../objects/images/ClickableImage'
 import Image from '../objects/images/Image'
@@ -77,7 +77,6 @@ export default class StartScene extends Phaser.Scene {
             scale: 0.5 * 1.5,
             callback: () => {
                 if (this.firebase.getUser()) {
-                    //console.log(this.firebase.getUser())
                     this.loadPlayScene(data)
                 } else {
                     this.firebase.signInWithPopup()
@@ -112,7 +111,14 @@ export default class StartScene extends Phaser.Scene {
             y: CANVAS_HEIGHT - 90,
             key: 'drag-it',
             callback: () => {
-                this.loadPlayScene(data)
+                if (this.firebase.getUser()) {
+                    this.loadPlayScene(data)
+                } else {
+                    this.firebase.signInWithPopup()
+                    this.firebase.onLoggedIn(() => {
+                        this.loadPlayScene(data)
+                    })
+                }
             },
             scale: 0.3 * 1.5,
         })

@@ -1,6 +1,7 @@
-import StateMachine from '../../states/StateMachine'
-import { IGameObject } from '../../types/object'
-import BodyObject from './BodyObject'
+import StateMachine from '../../../states/StateMachine'
+import { IGameObject } from '../../../types/object'
+import BodyObject from '../BodyObject'
+import { STAR_TWEENS_GLOW } from './config'
 
 export default class Star extends BodyObject {
     public stateMachine: StateMachine
@@ -17,11 +18,7 @@ export default class Star extends BodyObject {
 
         this.scene.tweens.add({
             targets: this,
-            scaleX: 0.25,
-            scaleY: 0.25,
-            yoyo: true,
-            loop: -1,
-            ease: 'sine.inout',
+            ...STAR_TWEENS_GLOW,
         })
 
         this.stateMachine = new StateMachine(this, 'ball')

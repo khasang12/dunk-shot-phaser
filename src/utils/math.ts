@@ -1,3 +1,4 @@
+import { SPEED_LIMIT } from '../constants'
 import { Point } from '../types/point'
 
 export function randomIntegerInRange(min: number, max: number): number {
@@ -32,4 +33,33 @@ export function estimateVelocityAndAngle(center: Point, pointer: Phaser.Input.Po
     const distance = Phaser.Math.Distance.Between(center.x, center.y, pointer.x, pointer.y)
 
     return [distance, angle]
+}
+
+export function drawParabolaTrajectory(
+    points: Phaser.GameObjects.Graphics,
+    x: number,
+    y: number,
+    speed: number,
+    radian: number,
+    minWidth: number,
+    maxWidth: number
+): void {
+    const trajectory = []
+    for (let i = 0; i < 6; i++) {
+        const time = i * 0.2
+        let dx = x + getProjectX(Math.min(SPEED_LIMIT, speed) * 7.5, radian) * time
+        const dy =
+            y -
+            getProjectY(Math.min(SPEED_LIMIT, speed) * 7.5, radian) * time +
+            0.5 * 980 * time ** 2
+        if (dx < minWidth) dx = -dx // symmetric
+        else if (dx > maxWidth) dx = maxWidth - (dx - maxWidth)
+        trajectory.push({ x: dx, y: dy })
+    }
+
+    // Loop through each point in the trajectory and draw a circle at that position
+    for (let i = 0; i < 6; i++) {
+        const point = trajectory[i]
+        points.fillCircle(point.x, point.y, 12 - i)
+    }
 }

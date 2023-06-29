@@ -1,11 +1,12 @@
-import { CANVAS_HEIGHT, CANVAS_WIDTH, COLLISION_EVENTS, SPEED_LIMIT } from '../../constants'
-import { gameManager } from '../../game'
-import StateMachine from '../../states/StateMachine'
-import { IGameObject } from '../../types/object'
-import IObserver from '../../types/observer'
-import { Point } from '../../types/point'
-import { getProjectX, getProjectY } from '../../utils/math'
-import BodyObject from './BodyObject'
+import { CANVAS_HEIGHT, CANVAS_WIDTH, COLLISION_EVENTS, SPEED_LIMIT } from '../../../constants'
+import SmokeEffect from '../../../effects/SmokeEffect'
+import { gameManager } from '../../../game'
+import StateMachine from '../../../states/StateMachine'
+import { IGameObject } from '../../../types/object'
+import IObserver from '../../../types/observer'
+import { getHypot, drawParabolaTrajectory, getProjectX, getProjectY } from '../../../utils/math'
+import BodyObject from '../BodyObject'
+import { flameParticleConfig, smokeParticleConfig } from './config'
 
 export default class Ball extends BodyObject implements IObserver {
     private speed: number
@@ -13,14 +14,15 @@ export default class Ball extends BodyObject implements IObserver {
     private elapsed: number
     private isMoving: boolean
     private powerUp: boolean
-    private trajectory: Point[]
     public points: Phaser.GameObjects.Graphics
     public stateMachine: StateMachine
     private smokeParticle: Phaser.GameObjects.Particles.ParticleEmitter
     private flameParticle: Phaser.GameObjects.Particles.ParticleEmitter
+    private smokeLaunch: SmokeEffect
 
     constructor(o: IGameObject) {
         super(o)
+
         this.elapsed = 0
         this.isMoving = false
         this.powerUp = false
@@ -54,7 +56,7 @@ export default class Ball extends BodyObject implements IObserver {
                 onUpdate: this.onFlyUpdate,
             })
 
-        this.stateMachine.setState('idle')
+        this.stateMachine.setState('snipe')
     }
 
     public update(dt: number) {
@@ -76,17 +78,7 @@ export default class Ball extends BodyObject implements IObserver {
     }
 
     public emitSmokeParticle(): void {
-        this.smokeParticle = this.scene.add.particles(100, 100, 'dot', {
-            color: [0xe2224c, 0xe25822, 0xe2b822, 0x696969, 0xf5f5f5],
-            alpha: { start: 0.9, end: 0.1, ease: 'sine.easeout' },
-            angle: { min: 0, max: 360 },
-            rotate: { min: 0, max: 360 },
-            speed: { min: 40, max: 70 },
-            colorEase: 'quad.easeinout',
-            lifespan: 1500,
-            scale: 0.5,
-            frequency: 60,
-        })
+        this.smokeParticle = this.scene.add.particles(100, 100, 'dot', smokeParticleConfig)
         this.smokeParticle.startFollow(this, -90, -120, true)
     }
 
@@ -124,6 +116,8 @@ export default class Ball extends BodyObject implements IObserver {
 
     public onFlyEnter(data: number[]) {
         const [x, y] = data
+        this.smokeLaunch = new SmokeEffect(this.scene, 0, 0)
+        this.smokeLaunch.emitSmoke(x, y, 0xababab)
         const angle = -this.radian
         if (this.speed > 0) {
             this.isMoving = true
@@ -141,27 +135,17 @@ export default class Ball extends BodyObject implements IObserver {
     public onSnipeEnter(data: number[]) {
         this.speed = data[0]
         this.radian = data[1]
-        this.trajectory = []
         this.points = this.scene.add.graphics()
         this.points.fillStyle(0xffa500, 1)
-        for (let i = 0; i < 6; i++) {
-            const timeSlice = i * 0.2
-            let x =
-                this.x +
-                getProjectX(Math.min(SPEED_LIMIT, this.speed) * 7.5, this.radian) * timeSlice
-            const y =
-                this.y -
-                getProjectY(Math.min(SPEED_LIMIT, this.speed) * 7.5, this.radian) * timeSlice +
-                0.5 * 980 * timeSlice ** 2
-            if (x < 0) x = -x // symmetric
-            else if (x > CANVAS_WIDTH) x = CANVAS_WIDTH - (x - CANVAS_WIDTH)
-            this.trajectory.push({ x, y })
-        }
-        // Loop through each point in the trajectory and draw a circle at that position
-        for (let i = 0; i < 6; i++) {
-            const point = this.trajectory[i]
-            this.points.fillCircle(point.x, point.y, 12 - i)
-        }
+        drawParabolaTrajectory(
+            this.points,
+            this.x,
+            this.y,
+            this.speed,
+            this.radian,
+            0,
+            CANVAS_WIDTH
+        )
     }
 
     public onSnipeExit() {
@@ -180,14 +164,28 @@ export default class Ball extends BodyObject implements IObserver {
         return (this.body?.velocity.y || 0) > 0
     }
 
+    public isOverlap() {
+        console.log(this.body?.overlapX, this.body?.overlapY)
+        const h = this.body ? getHypot(this.body?.overlapX, this.body?.overlapY) : 0
+        return h > 0.1 * this.width
+    }
+
     public isOutOfBounds() {
-        return this.x - this.width*this.scale < 0 || this.x > CANVAS_WIDTH - this.width*this.scale
+        return (
+            this.x - this.width * this.scale < 0 || this.x > CANVAS_WIDTH - this.width * this.scale
+        )
     }
 
     public onNotify(e: number) {
         const curScore = gameManager.getScoreManager().getCurScore()
         switch (e) {
+            case COLLISION_EVENTS['CURRENT_BASKET']:
+                this.smokeLaunch = new SmokeEffect(this.scene, 0, 0)
+                this.smokeLaunch.emitSmoke(this.x, this.y, 0xababab)
+                break
             case COLLISION_EVENTS['NEXT_BASKET']:
+                this.smokeLaunch = new SmokeEffect(this.scene, 0, 0)
+                this.smokeLaunch.emitSmoke(this.x, this.y, 0x0078d4)
                 if (this.isPowerUp()) {
                     this.disableSmoke()
                     this.disablePowerUp()
@@ -195,21 +193,13 @@ export default class Ball extends BodyObject implements IObserver {
                 if (curScore % 5 == 0 && curScore > 0) this.emitSmokeParticle()
                 break
             case COLLISION_EVENTS['WALL']:
-                this.flameParticle = this.scene.add.particles(this.x, this.y, 'flares', {
-                    frame: 'white',
-                    color: [0xfacc22, 0xf89800, 0xf83600, 0x9f0404],
-                    colorEase: 'quad.out',
-                    lifespan: 100,
-                    rotate: 90,
-                    scale: { start: 0.7, end: 0, ease: 'sine.out' },
-                    speed: 200,
-                    advance: 500,
-                    frequency: 60,
-                    blendMode: 'ADD',
-                    duration: 200,
-                })
+                this.flameParticle = this.scene.add.particles(
+                    this.x,
+                    this.y,
+                    'flares',
+                    flameParticleConfig
+                )
                 this.flameParticle.setDepth(1)
-                // When particles are complete, destroy them
                 this.flameParticle.once('complete', () => {
                     this.flameParticle.destroy()
                 })

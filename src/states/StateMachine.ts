@@ -44,11 +44,11 @@ export default class StateMachine {
             return
         }
 
-        console.log(
+        /* console.log(
             `[StateMachine (${this.id})] change from ${
                 this.currentState?.name ?? 'none'
             } to ${name}`
-        )
+        ) */
 
         if (this.isChangingState) {
             this.changeStateQueue.push(name)

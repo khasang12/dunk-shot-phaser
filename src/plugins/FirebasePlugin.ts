@@ -28,6 +28,7 @@ import {
 } from 'firebase/auth'
 
 const firebaseConfig = {
+    //apiKey: 'AIzaSyAF_Wawq4by-Rza3On2GbHV4TpyV2jyibg',
     apiKey: 'AIzaSyAF_Wawq4by-Rza3On2GbHV4TpyV2jyibg',
     authDomain: 'dunk-shot-phaser.firebaseapp.com',
     projectId: 'dunk-shot-phaser',

@@ -21,17 +21,16 @@ export default class GameOverScene extends Phaser.Scene {
 
     public updateLeaderboard() {
         let display = ''
-        this.firebase.getHighScores().then((data: LeaderboardItem[]) => {
-            data.forEach((item: LeaderboardItem, i: number) => {
-                display += `\n${i + 1}. ${item.name} ${item.score}`
+        try {
+            this.firebase.getHighScores().then((data: LeaderboardItem[]) => {
+                data.forEach((item: LeaderboardItem, i: number) => {
+                    display += `\n${i + 1}. ${item.name} ${item.score}`
+                })
+                console.log(this.boardText, display)
+                if (this.boardText && display) this.boardText.setText(display)
             })
-            if (this.boardText) this.boardText.setText(display)
-        })
-    }
-
-    public update(time: number) {
-        if (Math.floor(time / 1000) % 3 == 0) {
-            this.updateLeaderboard() // update after each 3 secs
+        } catch (e) {
+            console.log(e)
         }
     }
 
@@ -139,5 +138,7 @@ export default class GameOverScene extends Phaser.Scene {
             },
             scale: 0.32,
         })
+
+        this.updateLeaderboard()
     }
 }
