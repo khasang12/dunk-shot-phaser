@@ -1,19 +1,18 @@
 import { CANVAS_HEIGHT, CANVAS_WIDTH, COLLISION_EVENTS } from '../constants'
 import { gameManager } from '../game'
 import EventManager from '../manager/EventManager'
-import Ball from '../objects/game-objects/Ball'
-import Basket from '../objects/game-objects/Basket'
-import BasketController from '../objects/game-objects/BasketController'
-import Star from '../objects/game-objects/Star'
+import { InputManager } from '../manager/InputManager'
+import Ball from '../objects/game-objects/ball/Ball'
+import Basket from '../objects/game-objects/basket/Basket'
+import BasketController from '../objects/game-objects/basket/BasketController'
+import Star from '../objects/game-objects/star/Star'
 import Background from '../objects/images/Background'
 import ClickableImage from '../objects/images/ClickableImage'
 import Image from '../objects/images/Image'
 import FpsText from '../objects/texts/FpsText'
 import { Text } from '../objects/texts/Text'
 import IObserver from '../types/observer'
-import { Point } from '../types/point'
 import { Sound } from '../types/sound'
-import { estimateVelocityAndAngle } from '../utils/math'
 
 type SceneParam = {
     skin: string
@@ -37,6 +36,7 @@ export default class PlayScene extends Phaser.Scene implements IObserver {
     private fps: FpsText
 
     // GameObjects
+    private lineGroupBounds: Phaser.Physics.Arcade.Group
     private flag: Phaser.GameObjects.Sprite
     private ball: Ball
     private star: Star
@@ -44,88 +44,11 @@ export default class PlayScene extends Phaser.Scene implements IObserver {
     // Game Control Variables
     private basketCtrl: BasketController
     private eventManager: EventManager
-    private dragStart: Point | null
-    private lineGroupBounds: Phaser.Physics.Arcade.Group
+    private inputManager: InputManager
 
     constructor() {
         super({ key: 'PlayScene' })
         this.basketCtrl = new BasketController()
-    }
-
-    public create(data: SceneParam) {
-        // Reset Vars
-        gameManager.getScoreManager().reset()
-        this.eventManager = new EventManager()
-        this.netAudio = this.sound.add('net')
-        this.shootAudio = this.sound.add('shoot')
-        this.clickAudio = this.sound.add('click')
-        this.gameOverAudio = this.sound.add('game-over')
-
-        // Create Objects & Events
-        this.createAssets()
-        this.createObjects(data)
-        this.createWall()
-        this.subscribe()
-        this.cameras.main.startFollow(this.ball, false, 0, 1, -240, 240)
-    }
-
-    public update(dt: number) {
-        this.ball.update(dt)
-        this.updateBackground()
-
-        if (this.ball.y > this.basketCtrl.getCur().y + 200)
-            this.eventManager.notify(COLLISION_EVENTS['LOWER_BOUND'])
-        if (this.basketCtrl.getCur().y - this.ball.y > CANVAS_HEIGHT / 2)
-            this.eventManager.notify(COLLISION_EVENTS['UPPER_BOUND'])
-        if (
-            this.ball.isFlyingDown() &&
-            this.physics.collide(this.ball, this.basketCtrl.getCur().bodyGroup)
-        )
-            this.eventManager.notify(COLLISION_EVENTS['CURRENT_BASKET'])
-        if (
-            this.physics.overlap(this.ball, this.basketCtrl.getNext().openGroup) &&
-            this.physics.overlap(this.ball, this.basketCtrl.getNext().bodyGroup)
-        )
-            this.eventManager.notify(COLLISION_EVENTS['NEXT_BASKET'])
-
-        if (this.physics.collide(this.ball, this.basketCtrl.getNext().bodyGroup))
-            this.eventManager.notify(COLLISION_EVENTS['OBSTACLE'])
-
-        if (this.ball.isOutOfBounds()) {
-            this.eventManager.notify(COLLISION_EVENTS['WALL'])
-        }
-        if (this.physics.overlap(this.ball, this.star)) {
-            this.eventManager.notify(COLLISION_EVENTS['STAR'])
-        }
-    }
-
-    private onPointerDown(pointer: Phaser.Input.Pointer) {
-        this.dragStart = { x: pointer.x, y: pointer.y }
-    }
-
-    private onPointerUp(_pointer: Phaser.Input.Pointer) {
-        if (this.dragStart) {
-            this.basketCtrl.getCur().stateMachine.setState('idle')
-            this.ball.stateMachine.setState(
-                'fly',
-                this.basketCtrl.getCur().x,
-                this.basketCtrl.getCur().y
-            )
-            this.dragStart = null
-            this.shootAudio.play()
-        }
-    }
-
-    private onPointerMove(pointer: Phaser.Input.Pointer) {
-        if (pointer.isDown && this.dragStart) {
-            const [velocity, angle] = estimateVelocityAndAngle(this.dragStart, pointer)
-            this.basketCtrl.getCur().stateMachine.setState('snipe', velocity, angle)
-            this.ball.stateMachine.setState(
-                'snipe',
-                velocity,
-                Math.PI / 2 - this.basketCtrl.getCur().rotation
-            )
-        }
     }
 
     private createAssets() {
@@ -291,7 +214,7 @@ export default class PlayScene extends Phaser.Scene implements IObserver {
     }
 
     private subscribe() {
-        this.input.on('pointerdown', this.onPointerDown, this)
+        this.input.on('pointerdown', this.inputManager.onPointerDown, this.inputManager)
         this.input.on('pointermove', this.onPointerMove, this)
         this.input.on('pointerup', this.onPointerUp, this)
 
@@ -303,6 +226,77 @@ export default class PlayScene extends Phaser.Scene implements IObserver {
         this.eventManager.subscribe(this)
         this.eventManager.subscribe(this.ball)
         this.eventManager.subscribe(this.basketCtrl)
+    }
+
+    public create(data: SceneParam) {
+        // Reset Vars
+        gameManager.getScoreManager().reset()
+        this.eventManager = new EventManager()
+        this.inputManager = new InputManager()
+        this.netAudio = this.sound.add('net')
+        this.shootAudio = this.sound.add('shoot')
+        this.clickAudio = this.sound.add('click')
+        this.gameOverAudio = this.sound.add('game-over')
+
+        // Create Objects & Events
+        this.createAssets()
+        this.createObjects(data)
+        this.createWall()
+        this.subscribe()
+        this.cameras.main.startFollow(this.ball, false, 0, 1, -240, 240)
+    }
+
+    private onPointerUp(_pointer: Phaser.Input.Pointer) {
+        if (this.inputManager.isDragging()) {
+            this.basketCtrl.getCur().stateMachine.setState('idle')
+            this.ball.stateMachine.setState(
+                'fly',
+                this.basketCtrl.getCur().x,
+                this.basketCtrl.getCur().y
+            )
+            this.inputManager.emitDragLeave()
+            this.shootAudio.play()
+        }
+    }
+
+    private onPointerMove(pointer: Phaser.Input.Pointer) {
+        if (pointer.isDown && this.inputManager.isDragging()) {
+            const [velocity, angle] = this.inputManager.estimateVelocityAndAngle(pointer)
+            this.basketCtrl.getCur().stateMachine.setState('snipe', velocity, angle)
+            this.ball.stateMachine.setState(
+                'snipe',
+                velocity,
+                Math.PI / 2 - this.basketCtrl.getCur().rotation
+            )
+        }
+    }
+
+    public update(dt: number) {
+        this.ball.update(dt)
+        this.updateBackground()
+
+        if (this.ball.y > this.basketCtrl.getCur().y + 200)
+            this.eventManager.notify(COLLISION_EVENTS['LOWER_BOUND'])
+        if (this.basketCtrl.getCur().y - this.ball.y > CANVAS_HEIGHT / 2)
+            this.eventManager.notify(COLLISION_EVENTS['UPPER_BOUND'])
+        if (
+            this.ball.isFlyingDown() &&
+            this.physics.collide(this.ball, this.basketCtrl.getCur().bodyGroup)
+        )
+            this.eventManager.notify(COLLISION_EVENTS['CURRENT_BASKET'])
+        if (
+            this.physics.overlap(this.ball, this.basketCtrl.getNext().openGroup) &&
+            this.physics.overlap(this.ball, this.basketCtrl.getNext().bodyGroup)
+        )
+            this.eventManager.notify(COLLISION_EVENTS['NEXT_BASKET'])
+        if (this.physics.collide(this.ball, this.basketCtrl.getNext().bodyGroup))
+            this.eventManager.notify(COLLISION_EVENTS['OBSTACLE'])
+        if (this.ball.isOutOfBounds()) {
+            this.eventManager.notify(COLLISION_EVENTS['WALL'])
+        }
+        if (this.physics.overlap(this.ball, this.star)) {
+            this.eventManager.notify(COLLISION_EVENTS['STAR'])
+        }
     }
 
     private updateBackground() {
@@ -317,6 +311,7 @@ export default class PlayScene extends Phaser.Scene implements IObserver {
         this.lineGroupBounds.setY(this.cameras.main.scrollY)
         this.curScoreText.setY(this.cameras.main.scrollY + CANVAS_WIDTH / 2)
         this.wallImg.setY(this.cameras.main.scrollY + CANVAS_HEIGHT / 2)
+        this.background.setY(this.cameras.main.scrollY + CANVAS_HEIGHT / 2)
     }
 
     public onNotify(e: number): void {
@@ -395,14 +390,13 @@ export default class PlayScene extends Phaser.Scene implements IObserver {
                 bonus += 1
                 this.perfectText.emitTextFadeInOut(
                     this.basketCtrl.getNext().x,
-                    this.basketCtrl.getNext().y - 80,
+                    this.basketCtrl.getNext().y - 140,
                     1000
                 )
             }
 
             if (this.flag.alpha == 1) {
                 bonus += 1
-
                 this.flagText.emitTextFadeInOut(
                     this.basketCtrl.getNext().x,
                     this.basketCtrl.getNext().y - 100,
@@ -416,7 +410,7 @@ export default class PlayScene extends Phaser.Scene implements IObserver {
             gameManager.getScoreManager().incrementScore(bonus)
             this.incScoreText.emitTextFadeInOut(
                 this.basketCtrl.getNext().x,
-                this.basketCtrl.getNext().y - 60,
+                this.basketCtrl.getNext().y - 65,
                 1000
             )
 

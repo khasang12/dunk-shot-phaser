@@ -1,3 +1,4 @@
+import { InputManager } from './InputManager'
 import SceneManager from './SceneManager'
 import ScoreManager from './ScoreManager'
 
@@ -5,9 +6,12 @@ export default class GameManager {
     private static instance: GameManager
     private sceneManager: SceneManager
     public scoreManager: ScoreManager
+    public inputManager: InputManager
+
     private constructor() {
         this.sceneManager = SceneManager.getInstance()
         this.scoreManager = ScoreManager.getInstance()
+        this.inputManager = InputManager.getInstance()
     }
 
     public static getInstance(): GameManager {
@@ -23,5 +27,9 @@ export default class GameManager {
 
     public getSceneManager() {
         return this.sceneManager
+    }
+
+    public getInputManager() {
+        return this.inputManager
     }
 }

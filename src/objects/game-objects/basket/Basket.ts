@@ -1,6 +1,6 @@
-import { BASKET_EFFECTS, CANVAS_HEIGHT, CANVAS_WIDTH, SPEED_LIMIT } from '../../constants'
-import StateMachine from '../../states/StateMachine'
-import { IGameObject } from '../../types/object'
+import { BASKET_EFFECTS, CANVAS_HEIGHT, CANVAS_WIDTH, SPEED_LIMIT } from '../../../constants'
+import StateMachine from '../../../states/StateMachine'
+import { IGameObject } from '../../../types/object'
 import {
     getAngCoeff,
     getHypot,
@@ -8,10 +8,11 @@ import {
     getProjectY,
     randomAngle,
     randomIntegerInRange,
-} from '../../utils/math'
-import Ball from './Ball'
-import BodyObject from './BodyObject'
-import Star from './Star'
+} from '../../../utils/math'
+import Ball from '../ball/Ball'
+import BodyObject from '../BodyObject'
+import Star from '../star/Star'
+import { BASKET_TWEENS_MOVING, BASKET_TWEENS_ROTATING, BASKET_TWEENS_VIBRATING } from './config'
 
 export default class Basket extends BodyObject {
     public stateMachine: StateMachine
@@ -160,7 +161,7 @@ export default class Basket extends BodyObject {
 
     public onIdleEnter() {
         this.clearEffect()
-        this.setScale(this.scaleX, this.scaleX)
+        //this.setScale(this.scaleX, this.scaleX)
         this.scene.tweens.add({
             targets: this,
             scaleY: this.scaleX,
@@ -212,21 +213,15 @@ export default class Basket extends BodyObject {
         this.scene.tweens.add({
             targets: this,
             x: this.x - 10,
-            duration: 20,
-            ease: 'Linear',
-            yoyo: true,
-            repeat: 3,
+            ...BASKET_TWEENS_VIBRATING,
         })
     }
 
     public vibrateY() {
         this.scene.tweens.add({
             targets: this,
-            y: this.x - 10,
-            duration: 20,
-            ease: 'Linear',
-            yoyo: true,
-            repeat: 3,
+            y: this.y - 10,
+            ...BASKET_TWEENS_VIBRATING,
         })
     }
 
@@ -234,15 +229,12 @@ export default class Basket extends BodyObject {
         this.tweensX = this.scene.tweens.add({
             targets: this,
             x: this.x - 25, // Destination position of the object
-            duration: 1000, // Duration of the animation in milliseconds
-            ease: 'Power1',
-            yoyo: true, // Make the tween repeat back and forth
-            repeat: -1, // Repeat the tween indefinitely
             onUpdate: () => {
                 this.updateBodyGroup()
                 this.updateEdgeGroup()
                 this.updateOpenGroup()
             },
+            ...BASKET_TWEENS_MOVING,
         })
     }
 
@@ -250,31 +242,24 @@ export default class Basket extends BodyObject {
         this.tweensY = this.scene.tweens.add({
             targets: this,
             y: this.y + 30,
-            duration: 1000, // Duration of the animation in milliseconds
-            ease: 'Power1',
-            yoyo: true, // Make the tween repeat back and forth
-            repeat: -1, // Repeat the tween indefinitely
             onUpdate: () => {
                 this.updateBodyGroup()
                 this.updateEdgeGroup()
                 this.updateOpenGroup()
             },
+            ...BASKET_TWEENS_MOVING,
         })
     }
 
     public addRotating() {
         this.tweensAngle = this.scene.tweens.add({
             targets: this,
-            angle: Phaser.Math.Between(-45, 45),
-            duration: 1000, // Duration of the animation in milliseconds
-            ease: 'Linear',
-            yoyo: true, // Make the tween repeat back and forth
-            repeat: -1, // Repeat the tween indefinitely
             onUpdate: () => {
                 this.updateBodyGroup()
                 this.updateEdgeGroup()
                 this.updateOpenGroup()
             },
+            ...BASKET_TWEENS_ROTATING,
         })
     }
 

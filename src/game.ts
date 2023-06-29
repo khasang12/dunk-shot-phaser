@@ -42,7 +42,7 @@ export const config = {
             {
                 key: 'FirebasePlugin',
                 plugin: FirebasePlugin,
-                start: false,
+                start: true,
                 mapping: 'firebase',
             },
         ],

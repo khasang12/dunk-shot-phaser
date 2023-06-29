@@ -1,5 +1,5 @@
 import { CANVAS_HEIGHT, CANVAS_WIDTH } from '../constants'
-import Ball from '../objects/game-objects/Ball'
+import Ball from '../objects/game-objects/ball/Ball'
 import Button from '../objects/buttons/Button'
 import ClickableImage from '../objects/images/ClickableImage'
 import Image from '../objects/images/Image'

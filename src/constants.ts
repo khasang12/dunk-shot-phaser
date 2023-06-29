@@ -2,6 +2,7 @@ export const CANVAS_WIDTH = 720
 export const CANVAS_HEIGHT = 1080
 export const LIGHT_BG = 'rgb(240, 240, 240)'
 export const DARK_BG = 'rgb(20, 24, 82)'
+export const SPEED_LIMIT = 180
 
 export const SCENE_KEYS: Readonly<{ [key: string]: string }> = {
     CUSTOM: 'CustomizeScene',
@@ -28,5 +29,3 @@ export const COLLISION_EVENTS: Readonly<{ [key: string]: number }> = {
     CURRENT_BASKET: 4,
     NEXT_BASKET: 5,
 }
-
-export const SPEED_LIMIT = 180

@@ -1,6 +1,6 @@
-import { BASKET_EFFECTS, COLLISION_EVENTS } from '../../constants'
-import { gameManager } from '../../game'
-import IObserver from '../../types/observer'
+import { BASKET_EFFECTS, COLLISION_EVENTS } from '../../../constants'
+import { gameManager } from '../../../game'
+import IObserver from '../../../types/observer'
 import Basket from './Basket'
 
 export default class BasketController implements IObserver {

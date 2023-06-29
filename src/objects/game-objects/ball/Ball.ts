@@ -1,12 +1,12 @@
-import { CANVAS_HEIGHT, CANVAS_WIDTH, COLLISION_EVENTS, SPEED_LIMIT } from '../../constants'
-import SmokeEffect from '../../effects/SmokeEffect'
-import { gameManager } from '../../game'
-import StateMachine from '../../states/StateMachine'
-import { IGameObject } from '../../types/object'
-import IObserver from '../../types/observer'
-import { Point } from '../../types/point'
-import { getHypot, getProjectX, getProjectY } from '../../utils/math'
-import BodyObject from './BodyObject'
+import { CANVAS_HEIGHT, CANVAS_WIDTH, COLLISION_EVENTS, SPEED_LIMIT } from '../../../constants'
+import SmokeEffect from '../../../effects/SmokeEffect'
+import { gameManager } from '../../../game'
+import StateMachine from '../../../states/StateMachine'
+import { IGameObject } from '../../../types/object'
+import IObserver from '../../../types/observer'
+import { Point } from '../../../types/point'
+import { getHypot, getProjectX, getProjectY } from '../../../utils/math'
+import BodyObject from '../BodyObject'
 
 export default class Ball extends BodyObject implements IObserver {
     private origin: Point
