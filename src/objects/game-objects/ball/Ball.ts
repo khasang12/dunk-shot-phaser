@@ -130,7 +130,6 @@ export default class Ball extends BodyObject implements IObserver {
 
     public onFlyUpdate(_delta: number) {
         if (this.isMoving) this.rotation += 0.2
-        console.log(this.x, this.y)
     }
 
     public onSnipeEnter(data: number[]) {

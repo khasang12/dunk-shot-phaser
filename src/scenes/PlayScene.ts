@@ -30,6 +30,7 @@ export default class PlayScene extends Phaser.Scene implements IObserver {
     private perfectText: Text
     private flagText: Text
     private fps: FpsText
+    private flagTweens: Phaser.Tweens.Tween
 
     // GameObjects
     private lineGroupBounds: Phaser.Physics.Arcade.Group
@@ -270,6 +271,7 @@ export default class PlayScene extends Phaser.Scene implements IObserver {
     }
 
     public update(dt: number) {
+        console.log(this.cameras.main.scrollY);
         this.ball.update(dt)
         this.updateBackground()
 
@@ -305,7 +307,7 @@ export default class PlayScene extends Phaser.Scene implements IObserver {
         this.fps.setY(this.cameras.main.scrollY + 50)
         this.starImg.setY(this.cameras.main.scrollY + 50)
         this.scoreText.setY(this.cameras.main.scrollY + 50)
-        this.flag.setY(this.cameras.main.scrollY + CANVAS_WIDTH)
+        //this.flag.setY(this.cameras.main.scrollY + CANVAS_WIDTH)
         this.lineGroupBounds.setY(this.cameras.main.scrollY)
         this.curScoreText.setY(this.cameras.main.scrollY + CANVAS_WIDTH / 2)
         this.wallImg.setY(this.cameras.main.scrollY + CANVAS_HEIGHT / 2)
@@ -346,13 +348,15 @@ export default class PlayScene extends Phaser.Scene implements IObserver {
     }
 
     private onHitUpperBound() {
-        this.tweens.add({
-            targets: this.flag,
-            alpha: 1,
-            angle: 270,
-            ease: 'Linear',
-            duration: 200,
-        })
+        if (!this.flagTweens || !this.flagTweens.isActive()) {
+            this.flagTweens = this.tweens.add({
+                targets: this.flag,
+                alpha: 1,
+                angle: 270,
+                ease: 'Linear',
+                duration: 1200,
+            })
+        }
     }
 
     private onHitCurrent() {

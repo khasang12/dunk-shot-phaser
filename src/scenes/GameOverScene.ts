@@ -26,7 +26,7 @@ export default class GameOverScene extends Phaser.Scene {
                 data.forEach((item: LeaderboardItem, i: number) => {
                     display += `\n${i + 1}. ${item.name} ${item.score}`
                 })
-
+                console.log(this.boardText, display)
                 if (this.boardText && display) this.boardText.setText(display)
             })
         } catch (e) {
