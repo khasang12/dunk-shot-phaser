@@ -23,9 +23,10 @@ export const BASKET_EFFECTS: Readonly<{ [key: string]: number }> = {
 export const COLLISION_EVENTS: Readonly<{ [key: string]: number }> = {
     WALL: 0,
     LOWER_BOUND: 1,
-    OBSTACLE: 2,
-    CURRENT_BASKET: 3,
-    NEXT_BASKET: 4,
+    UPPER_BOUND: 2,
+    OBSTACLE: 3,
+    CURRENT_BASKET: 4,
+    NEXT_BASKET: 5,
 }
 
 export const SPEED_LIMIT = 180

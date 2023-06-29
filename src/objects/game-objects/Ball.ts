@@ -1,4 +1,5 @@
 import { CANVAS_HEIGHT, CANVAS_WIDTH, COLLISION_EVENTS, SPEED_LIMIT } from '../../constants'
+import SmokeEffect from '../../effects/SmokeEffect'
 import { gameManager } from '../../game'
 import StateMachine from '../../states/StateMachine'
 import { IGameObject } from '../../types/object'
@@ -8,6 +9,7 @@ import { getHypot, getProjectX, getProjectY } from '../../utils/math'
 import BodyObject from './BodyObject'
 
 export default class Ball extends BodyObject implements IObserver {
+    private origin: Point
     private speed: number
     private radian: number
     private elapsed: number
@@ -18,12 +20,15 @@ export default class Ball extends BodyObject implements IObserver {
     public stateMachine: StateMachine
     private smokeParticle: Phaser.GameObjects.Particles.ParticleEmitter
     private flameParticle: Phaser.GameObjects.Particles.ParticleEmitter
+    private smokeLaunch: SmokeEffect
 
     constructor(o: IGameObject) {
         super(o)
+
         this.elapsed = 0
         this.isMoving = false
         this.powerUp = false
+        this.origin = { x: this.x, y: this.y }
 
         this.scene.physics.add.existing(this)
 
@@ -54,7 +59,7 @@ export default class Ball extends BodyObject implements IObserver {
                 onUpdate: this.onFlyUpdate,
             })
 
-        this.stateMachine.setState('idle')
+        this.stateMachine.setState('snipe')
     }
 
     public update(dt: number) {
@@ -69,6 +74,7 @@ export default class Ball extends BodyObject implements IObserver {
             }
             this.setX(x)
             this.setY(y)
+            this.origin = { x: x, y: y }
             this.setVelocity(0, 0)
             this.disableBody(true, false)
             this.isMoving = false
@@ -76,17 +82,7 @@ export default class Ball extends BodyObject implements IObserver {
     }
 
     public emitSmokeParticle(): void {
-        this.smokeParticle = this.scene.add.particles(100, 100, 'dot', {
-            color: [0xe2224c, 0xe25822, 0xe2b822, 0x696969, 0xf5f5f5],
-            alpha: { start: 0.9, end: 0.1, ease: 'sine.easeout' },
-            angle: { min: 0, max: 360 },
-            rotate: { min: 0, max: 360 },
-            speed: { min: 40, max: 70 },
-            colorEase: 'quad.easeinout',
-            lifespan: 1500,
-            scale: 0.5,
-            frequency: 60,
-        })
+        this.smokeParticle = this.scene.add.particles(100, 100, 'dot', smokeParticleConfig)
         this.smokeParticle.startFollow(this, -90, -120, true)
     }
 
@@ -124,6 +120,8 @@ export default class Ball extends BodyObject implements IObserver {
 
     public onFlyEnter(data: number[]) {
         const [x, y] = data
+        this.smokeLaunch = new SmokeEffect(this.scene, 0, 0)
+        this.smokeLaunch.emitSmoke(x, y, 0xababab)
         const angle = -this.radian
         if (this.speed > 0) {
             this.isMoving = true
@@ -136,6 +134,7 @@ export default class Ball extends BodyObject implements IObserver {
 
     public onFlyUpdate(_delta: number) {
         if (this.isMoving) this.rotation += 0.2
+        console.log(this.x, this.y)
     }
 
     public onSnipeEnter(data: number[]) {
@@ -145,14 +144,13 @@ export default class Ball extends BodyObject implements IObserver {
         this.points = this.scene.add.graphics()
         this.points.fillStyle(0xffa500, 1)
         for (let i = 0; i < 6; i++) {
-            const timeSlice = i * 0.2
+            const time = i * 0.2
             let x =
-                this.x +
-                getProjectX(Math.min(SPEED_LIMIT, this.speed) * 7.5, this.radian) * timeSlice
+                this.x + getProjectX(Math.min(SPEED_LIMIT, this.speed) * 7.5, this.radian) * time
             const y =
                 this.y -
-                getProjectY(Math.min(SPEED_LIMIT, this.speed) * 7.5, this.radian) * timeSlice +
-                0.5 * 980 * timeSlice ** 2
+                getProjectY(Math.min(SPEED_LIMIT, this.speed) * 7.5, this.radian) * time +
+                0.5 * 980 * time ** 2
             if (x < 0) x = -x // symmetric
             else if (x > CANVAS_WIDTH) x = CANVAS_WIDTH - (x - CANVAS_WIDTH)
             this.trajectory.push({ x, y })
@@ -195,7 +193,13 @@ export default class Ball extends BodyObject implements IObserver {
     public onNotify(e: number) {
         const curScore = gameManager.getScoreManager().getCurScore()
         switch (e) {
+            case COLLISION_EVENTS['CURRENT_BASKET']:
+                this.smokeLaunch = new SmokeEffect(this.scene, 0, 0)
+                this.smokeLaunch.emitSmoke(this.x, this.y, 0xababab)
+                break
             case COLLISION_EVENTS['NEXT_BASKET']:
+                this.smokeLaunch = new SmokeEffect(this.scene, 0, 0)
+                this.smokeLaunch.emitSmoke(this.x, this.y, 0x0078d4)
                 if (this.isPowerUp()) {
                     this.disableSmoke()
                     this.disablePowerUp()
@@ -203,24 +207,42 @@ export default class Ball extends BodyObject implements IObserver {
                 if (curScore % 5 == 0 && curScore > 0) this.emitSmokeParticle()
                 break
             case COLLISION_EVENTS['WALL']:
-                this.flameParticle = this.scene.add.particles(this.x, this.y, 'flares', {
-                    frame: 'white',
-                    color: [0xfacc22, 0xf89800, 0xf83600, 0x9f0404],
-                    colorEase: 'quad.out',
-                    lifespan: 100,
-                    rotate: 90,
-                    scale: { start: 0.7, end: 0, ease: 'sine.out' },
-                    speed: 200,
-                    advance: 500,
-                    frequency: 60,
-                    blendMode: 'ADD',
-                    duration: 200,
-                })
+                this.flameParticle = this.scene.add.particles(
+                    this.x,
+                    this.y,
+                    'flares',
+                    flameParticleConfig
+                )
                 this.flameParticle.setDepth(1)
-                // When particles are complete, destroy them
                 this.flameParticle.once('complete', () => {
                     this.flameParticle.destroy()
                 })
         }
     }
+}
+
+const flameParticleConfig = {
+    frame: 'white',
+    color: [0xfacc22, 0xf89800, 0xf83600, 0x9f0404],
+    colorEase: 'quad.out',
+    lifespan: 100,
+    rotate: 90,
+    scale: { start: 0.7, end: 0, ease: 'sine.out' },
+    speed: 200,
+    advance: 500,
+    frequency: 60,
+    blendMode: 'ADD',
+    duration: 200,
+}
+
+const smokeParticleConfig = {
+    color: [0xe2224c, 0xe25822, 0xe2b822, 0x696969, 0xf5f5f5],
+    alpha: { start: 0.9, end: 0.1, ease: 'sine.easeout' },
+    angle: { min: 0, max: 360 },
+    rotate: { min: 0, max: 360 },
+    speed: { min: 40, max: 70 },
+    colorEase: 'quad.easeinout',
+    lifespan: 1500,
+    scale: 0.5,
+    frequency: 60,
 }

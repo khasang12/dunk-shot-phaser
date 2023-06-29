@@ -27,14 +27,17 @@ export default class PlayScene extends Phaser.Scene implements IObserver {
     private shootAudio: Sound
     private clickAudio: Sound
     private starImg: Image
+    private wallImg: Image
     private pauseImg: ClickableImage
     private curScoreText: Text
     private scoreText: Text
     private incScoreText: Text
     private perfectText: Text
+    private flagText: Text
     private fps: FpsText
 
     // GameObjects
+    private flag: Phaser.GameObjects.Sprite
     private ball: Ball
     private star: Star
 
@@ -43,7 +46,6 @@ export default class PlayScene extends Phaser.Scene implements IObserver {
     private eventManager: EventManager
     private dragStart: Point | null
     private lineGroupBounds: Phaser.Physics.Arcade.Group
-    private lineGroupUpperBounds: Phaser.Physics.Arcade.Group
 
     constructor() {
         super({ key: 'PlayScene' })
@@ -64,20 +66,22 @@ export default class PlayScene extends Phaser.Scene implements IObserver {
         this.createObjects(data)
         this.createWall()
         this.subscribe()
+        this.cameras.main.startFollow(this.ball, false, 0, 1, -240, 240)
     }
 
     public update(dt: number) {
         this.ball.update(dt)
         this.updateBackground()
 
-        if (this.ball.y > CANVAS_HEIGHT) this.eventManager.notify(COLLISION_EVENTS['LOWER_BOUND'])
-
+        if (this.ball.y > this.basketCtrl.getCur().y + 200)
+            this.eventManager.notify(COLLISION_EVENTS['LOWER_BOUND'])
+        if (this.basketCtrl.getCur().y - this.ball.y > CANVAS_HEIGHT / 2)
+            this.eventManager.notify(COLLISION_EVENTS['UPPER_BOUND'])
         if (
             this.ball.isFlyingDown() &&
             this.physics.collide(this.ball, this.basketCtrl.getCur().bodyGroup)
         )
             this.eventManager.notify(COLLISION_EVENTS['CURRENT_BASKET'])
-
         if (
             this.physics.overlap(this.ball, this.basketCtrl.getNext().openGroup) &&
             this.physics.overlap(this.ball, this.basketCtrl.getNext().bodyGroup)
@@ -90,7 +94,6 @@ export default class PlayScene extends Phaser.Scene implements IObserver {
         if (this.ball.isOutOfBounds()) {
             this.eventManager.notify(COLLISION_EVENTS['WALL'])
         }
-
         if (this.physics.overlap(this.ball, this.star)) {
             this.eventManager.notify(COLLISION_EVENTS['STAR'])
         }
@@ -140,20 +143,14 @@ export default class PlayScene extends Phaser.Scene implements IObserver {
             scale: 0.45,
         })
 
-        const wallUp = new Image({
-            scene: this,
-            x: W / 2,
-            y: -H + 25,
-            key: 'bg_1',
-        }).setAlpha(0.6)
-
-        const wallImg = new Image({
+        this.wallImg = new Image({
             scene: this,
             x: W / 2,
             y: H / 2,
             key: 'bg_0',
         })
-        wallImg.setAlpha(0.6).setScale(0.55)
+            .setAlpha(0.6)
+            .setScale(0.55)
 
         this.pauseImg = new ClickableImage({
             scene: this,
@@ -172,7 +169,7 @@ export default class PlayScene extends Phaser.Scene implements IObserver {
             y: 50,
             key: 'star',
             scale: 0.32,
-        })
+        }).setDepth(1)
 
         this.scoreText = new Text({
             scene: this,
@@ -185,7 +182,7 @@ export default class PlayScene extends Phaser.Scene implements IObserver {
                 color: 'black',
                 strokeThickness: 3,
             },
-        })
+        }).setDepth(1)
 
         this.curScoreText = new Text({
             scene: this,
@@ -199,8 +196,16 @@ export default class PlayScene extends Phaser.Scene implements IObserver {
             scene: this,
             x: -100,
             y: -100,
-            msg: 'PERFECT!!',
-            style: { fontSize: '25px', color: '#ffa500', fontStyle: 'bold' },
+            msg: 'PERFECT !!',
+            style: { fontSize: '30px', color: '#ffa500', fontStyle: 'bold' },
+        })
+
+        this.flagText = new Text({
+            scene: this,
+            x: -200,
+            y: -200,
+            msg: 'SKYBALL !!',
+            style: { fontSize: '30px', color: '#00008b', fontStyle: 'bold' },
         })
 
         this.incScoreText = new Text({
@@ -210,30 +215,26 @@ export default class PlayScene extends Phaser.Scene implements IObserver {
             msg: '+1',
             style: { fontSize: '50px', color: 'red', fontStyle: 'bold' },
         })
+
+        this.anims.create({
+            key: 'flags',
+            frames: this.anims.generateFrameNumbers('flag', { frames: [0, 1, 2, 3, 4] }),
+            frameRate: 8,
+            repeat: -1,
+        })
+        this.flag = this.add.sprite(CANVAS_WIDTH, -130, 'flags')
+        this.flag.play('flags').setScale(5).setAngle(0).setAlpha(0)
     }
 
     private createWall() {
         const [W, H] = [CANVAS_WIDTH, CANVAS_HEIGHT]
-        const line1 = this.add.line(0, -5 * H, 0, -5 * H, 0, 5 * H)
-        const line2 = this.add.line(W, -5 * H, W, -5 * H, W, 5 * H)
-        const line3 = this.add.line(0, 0, 0, 0, 0, H * 2)
-        const line4 = this.add.line(W, 0, W, 0, W, H * 2)
-
-        this.lineGroupUpperBounds = this.physics.add.group({
-            allowGravity: false,
-            immovable: true,
-            visible: true,
-            bounceX: 1,
-            bounceY: 1,
-        })
-        this.lineGroupUpperBounds.add(line1)
-        this.lineGroupUpperBounds.add(line2)
+        const line3 = this.add.line(0, 0, 0, -H * 2, 0, H * 2)
+        const line4 = this.add.line(W, 0, W, -H * 2, W, H * 2)
 
         this.lineGroupBounds = this.physics.add.group({
             allowGravity: false,
             immovable: true,
             visible: true,
-            collideWorldBounds: true,
             bounceX: 1,
             bounceY: 1,
         })
@@ -295,7 +296,6 @@ export default class PlayScene extends Phaser.Scene implements IObserver {
         this.input.on('pointerup', this.onPointerUp, this)
 
         this.physics.add.collider(this.ball, [
-            this.lineGroupUpperBounds,
             this.lineGroupBounds,
             this.basketCtrl.getNext().edgeGroup,
         ])
@@ -308,14 +308,22 @@ export default class PlayScene extends Phaser.Scene implements IObserver {
     private updateBackground() {
         this.fps.update()
         this.background.tilePositionY -= 1
-        this.cameras.main.setScroll(
-            this.cameras.main.scrollX,
-            this.ball.y - this.basketCtrl.getCur().y
-        )
+
+        this.pauseImg.setY(this.cameras.main.scrollY + 50)
+        this.fps.setY(this.cameras.main.scrollY + 50)
+        this.starImg.setY(this.cameras.main.scrollY + 50)
+        this.scoreText.setY(this.cameras.main.scrollY + 50)
+        this.flag.setY(this.cameras.main.scrollY + CANVAS_WIDTH)
+        this.lineGroupBounds.setY(this.cameras.main.scrollY)
+        this.curScoreText.setY(this.cameras.main.scrollY + CANVAS_WIDTH / 2)
+        this.wallImg.setY(this.cameras.main.scrollY + CANVAS_HEIGHT / 2)
     }
 
     public onNotify(e: number): void {
         switch (e) {
+            case COLLISION_EVENTS['UPPER_BOUND']:
+                this.onHitUpperBound()
+                break
             case COLLISION_EVENTS['LOWER_BOUND']:
                 this.onHitLowerBound()
                 break
@@ -335,11 +343,22 @@ export default class PlayScene extends Phaser.Scene implements IObserver {
         this.gameOverAudio.play()
         gameManager.getScoreManager().saveScoreToLocalStorage()
         this.firebase.addHighScore(
-            this.firebase.getUser().displayName,
+            this.firebase.getUser() ? this.firebase.getUser().displayName : 'test',
             gameManager.getScoreManager().getCurScore()
         )
         this.scene.start('GameOverScene', {
             data: gameManager.getScoreManager().getCurScore(),
+        })
+        if (this.flag) this.flag.destroy()
+    }
+
+    private onHitUpperBound() {
+        this.tweens.add({
+            targets: this.flag,
+            alpha: 1,
+            angle: 270,
+            ease: 'Linear',
+            duration: 200,
         })
     }
 
@@ -350,6 +369,7 @@ export default class PlayScene extends Phaser.Scene implements IObserver {
             this.basketCtrl.getCur().y
         )
         this.netAudio.play()
+        this.flag.setAlpha(0)
     }
 
     private onHitStar() {
@@ -375,9 +395,20 @@ export default class PlayScene extends Phaser.Scene implements IObserver {
                 bonus += 1
                 this.perfectText.emitTextFadeInOut(
                     this.basketCtrl.getNext().x,
-                    this.basketCtrl.getNext().y - 50,
+                    this.basketCtrl.getNext().y - 80,
                     1000
                 )
+            }
+
+            if (this.flag.alpha == 1) {
+                bonus += 1
+
+                this.flagText.emitTextFadeInOut(
+                    this.basketCtrl.getNext().x,
+                    this.basketCtrl.getNext().y - 100,
+                    1000
+                )
+                this.flag.setAlpha(0)
             }
 
             if (this.ball.isPowerUp()) bonus += 1
@@ -385,9 +416,10 @@ export default class PlayScene extends Phaser.Scene implements IObserver {
             gameManager.getScoreManager().incrementScore(bonus)
             this.incScoreText.emitTextFadeInOut(
                 this.basketCtrl.getNext().x,
-                this.basketCtrl.getNext().y,
+                this.basketCtrl.getNext().y - 60,
                 1000
             )
+
             const curScore = gameManager.getScoreManager().getCurScore()
             this.curScoreText.text = curScore.toString()
             this.time.delayedCall(0, () => {

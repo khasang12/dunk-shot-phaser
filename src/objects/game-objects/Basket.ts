@@ -150,17 +150,23 @@ export default class Basket extends BodyObject {
     public onTransitEnter(data: number[]) {
         const [_W, H] = [CANVAS_WIDTH, CANVAS_HEIGHT]
         const [state, effect] = data
-        const newY =
-            this.y > H / 2
-                ? randomIntegerInRange(200, H / 2 - 200)
-                : randomIntegerInRange(H / 2, H - 100)
-        this.y = newY
-        this.transition(this, this.x, newY, state == 1 ? true : false, effect)
+        if (state == 0) this.transition(this, this.x, this.y, false, effect)
+        else {
+            const newY = this.y - randomIntegerInRange(H / 2, H - 200)
+            this.transition(this, this.x, newY, true, effect)
+            this.y = newY
+        }
     }
 
     public onIdleEnter() {
         this.clearEffect()
         this.setScale(this.scaleX, this.scaleX)
+        this.scene.tweens.add({
+            targets: this,
+            scaleY: this.scaleX,
+            duration: 5000,
+            ease: 'Power2',
+        })
         this.updateEdgeGroup()
     }
 
@@ -169,7 +175,10 @@ export default class Basket extends BodyObject {
         this.rotation = angle - Math.PI / 2
         this.setScale(
             this.scaleX,
-            Math.max((this.scaleX * 1.2 * Math.min(velocity, SPEED_LIMIT)) / SPEED_LIMIT, this.scaleX)
+            Math.max(
+                (this.scaleX * 1.3 * Math.min(velocity, SPEED_LIMIT)) / SPEED_LIMIT,
+                this.scaleX * 1.2
+            )
         )
         this.updateEdgeGroup()
     }

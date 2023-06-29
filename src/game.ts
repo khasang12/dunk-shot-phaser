@@ -34,7 +34,7 @@ export const config = {
     physics: {
         default: 'arcade',
         arcade: {
-            debug: false,
+            debug: true,
         },
     },
     plugins: {
@@ -42,7 +42,7 @@ export const config = {
             {
                 key: 'FirebasePlugin',
                 plugin: FirebasePlugin,
-                start: true,
+                start: false,
                 mapping: 'firebase',
             },
         ],

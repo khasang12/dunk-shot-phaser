@@ -137,12 +137,12 @@ export default class GameOverScene extends Phaser.Scene {
     }
 
     public update(time: number) {
-        try {
+        /* try {
             if (Math.floor(time / 1000) % 3 == 0) {
                 this.updateLeaderboard() // update after each 3 secs
             }
         } catch (err) {
             console.log(err)
-        }
+        } */
     }
 }
