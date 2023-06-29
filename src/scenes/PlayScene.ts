@@ -2,6 +2,7 @@ import { CANVAS_HEIGHT, CANVAS_WIDTH, COLLISION_EVENTS } from '../constants'
 import { gameManager } from '../game'
 import EventManager from '../manager/EventManager'
 import { InputManager } from '../manager/InputManager'
+import SoundManager from '../manager/SoundManager'
 import Ball from '../objects/game-objects/ball/Ball'
 import Basket from '../objects/game-objects/basket/Basket'
 import BasketController from '../objects/game-objects/basket/BasketController'
@@ -12,7 +13,6 @@ import Image from '../objects/images/Image'
 import FpsText from '../objects/texts/FpsText'
 import { Text } from '../objects/texts/Text'
 import IObserver from '../types/observer'
-import { Sound } from '../types/sound'
 
 type SceneParam = {
     skin: string
@@ -21,10 +21,6 @@ type SceneParam = {
 export default class PlayScene extends Phaser.Scene implements IObserver {
     // Background & Assets & Texts
     private background: Background
-    private netAudio: Sound
-    private gameOverAudio: Sound
-    private shootAudio: Sound
-    private clickAudio: Sound
     private starImg: Image
     private wallImg: Image
     private pauseImg: ClickableImage
@@ -45,6 +41,7 @@ export default class PlayScene extends Phaser.Scene implements IObserver {
     private basketCtrl: BasketController
     private eventManager: EventManager
     private inputManager: InputManager
+    private soundManager: SoundManager
 
     constructor() {
         super({ key: 'PlayScene' })
@@ -232,11 +229,12 @@ export default class PlayScene extends Phaser.Scene implements IObserver {
         // Reset Vars
         gameManager.getScoreManager().reset()
         this.eventManager = new EventManager()
-        this.inputManager = new InputManager()
-        this.netAudio = this.sound.add('net')
-        this.shootAudio = this.sound.add('shoot')
-        this.clickAudio = this.sound.add('click')
-        this.gameOverAudio = this.sound.add('game-over')
+        this.inputManager = InputManager.getInstance()
+        this.soundManager = SoundManager.getInstance()
+        this.soundManager.addSound('net', this.sound.add('net'))
+        this.soundManager.addSound('shoot', this.sound.add('shoot'))
+        this.soundManager.addSound('click', this.sound.add('click'))
+        this.soundManager.addSound('over', this.sound.add('game-over'))
 
         // Create Objects & Events
         this.createAssets()
@@ -255,7 +253,7 @@ export default class PlayScene extends Phaser.Scene implements IObserver {
                 this.basketCtrl.getCur().y
             )
             this.inputManager.emitDragLeave()
-            this.shootAudio.play()
+            this.soundManager.playSound('shoot')
         }
     }
 
@@ -335,7 +333,7 @@ export default class PlayScene extends Phaser.Scene implements IObserver {
     }
 
     private onHitLowerBound() {
-        this.gameOverAudio.play()
+        this.soundManager.playSound('over')
         gameManager.getScoreManager().saveScoreToLocalStorage()
         this.firebase.addHighScore(
             this.firebase.getUser() ? this.firebase.getUser().displayName : 'test',
@@ -363,13 +361,13 @@ export default class PlayScene extends Phaser.Scene implements IObserver {
             this.basketCtrl.getCur().x,
             this.basketCtrl.getCur().y
         )
-        this.netAudio.play()
+        this.soundManager.playSound('net')
         this.flag.setAlpha(0)
     }
 
     private onHitStar() {
         gameManager.getScoreManager().incrementStar()
-        this.clickAudio.play()
+        this.soundManager.playSound('click')
         this.scoreText.setText(gameManager.getScoreManager().getCurStar().toString())
         this.star.stateMachine.setState('disable')
     }
@@ -378,7 +376,7 @@ export default class PlayScene extends Phaser.Scene implements IObserver {
         if (this.ball.body) {
             let bonus = 0
             const veloAngle = Math.atan2(this.ball.body?.velocity.y, this.ball.body?.velocity.x)
-            this.netAudio.play()
+            this.soundManager.playSound('net')
             bonus += 1
             this.ball.stateMachine.setState(
                 'idle',

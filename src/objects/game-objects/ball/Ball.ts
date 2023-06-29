@@ -4,18 +4,16 @@ import { gameManager } from '../../../game'
 import StateMachine from '../../../states/StateMachine'
 import { IGameObject } from '../../../types/object'
 import IObserver from '../../../types/observer'
-import { Point } from '../../../types/point'
-import { getHypot, getProjectX, getProjectY } from '../../../utils/math'
+import { getHypot, drawParabolaTrajectory, getProjectX, getProjectY } from '../../../utils/math'
 import BodyObject from '../BodyObject'
+import { flameParticleConfig, smokeParticleConfig } from './config'
 
 export default class Ball extends BodyObject implements IObserver {
-    private origin: Point
     private speed: number
     private radian: number
     private elapsed: number
     private isMoving: boolean
     private powerUp: boolean
-    private trajectory: Point[]
     public points: Phaser.GameObjects.Graphics
     public stateMachine: StateMachine
     private smokeParticle: Phaser.GameObjects.Particles.ParticleEmitter
@@ -28,7 +26,6 @@ export default class Ball extends BodyObject implements IObserver {
         this.elapsed = 0
         this.isMoving = false
         this.powerUp = false
-        this.origin = { x: this.x, y: this.y }
 
         this.scene.physics.add.existing(this)
 
@@ -74,7 +71,6 @@ export default class Ball extends BodyObject implements IObserver {
             }
             this.setX(x)
             this.setY(y)
-            this.origin = { x: x, y: y }
             this.setVelocity(0, 0)
             this.disableBody(true, false)
             this.isMoving = false
@@ -140,26 +136,17 @@ export default class Ball extends BodyObject implements IObserver {
     public onSnipeEnter(data: number[]) {
         this.speed = data[0]
         this.radian = data[1]
-        this.trajectory = []
         this.points = this.scene.add.graphics()
         this.points.fillStyle(0xffa500, 1)
-        for (let i = 0; i < 6; i++) {
-            const time = i * 0.2
-            let x =
-                this.x + getProjectX(Math.min(SPEED_LIMIT, this.speed) * 7.5, this.radian) * time
-            const y =
-                this.y -
-                getProjectY(Math.min(SPEED_LIMIT, this.speed) * 7.5, this.radian) * time +
-                0.5 * 980 * time ** 2
-            if (x < 0) x = -x // symmetric
-            else if (x > CANVAS_WIDTH) x = CANVAS_WIDTH - (x - CANVAS_WIDTH)
-            this.trajectory.push({ x, y })
-        }
-        // Loop through each point in the trajectory and draw a circle at that position
-        for (let i = 0; i < 6; i++) {
-            const point = this.trajectory[i]
-            this.points.fillCircle(point.x, point.y, 12 - i)
-        }
+        drawParabolaTrajectory(
+            this.points,
+            this.x,
+            this.y,
+            this.speed,
+            this.radian,
+            0,
+            CANVAS_WIDTH
+        )
     }
 
     public onSnipeExit() {
@@ -219,30 +206,4 @@ export default class Ball extends BodyObject implements IObserver {
                 })
         }
     }
-}
-
-const flameParticleConfig = {
-    frame: 'white',
-    color: [0xfacc22, 0xf89800, 0xf83600, 0x9f0404],
-    colorEase: 'quad.out',
-    lifespan: 100,
-    rotate: 90,
-    scale: { start: 0.7, end: 0, ease: 'sine.out' },
-    speed: 200,
-    advance: 500,
-    frequency: 60,
-    blendMode: 'ADD',
-    duration: 200,
-}
-
-const smokeParticleConfig = {
-    color: [0xe2224c, 0xe25822, 0xe2b822, 0x696969, 0xf5f5f5],
-    alpha: { start: 0.9, end: 0.1, ease: 'sine.easeout' },
-    angle: { min: 0, max: 360 },
-    rotate: { min: 0, max: 360 },
-    speed: { min: 40, max: 70 },
-    colorEase: 'quad.easeinout',
-    lifespan: 1500,
-    scale: 0.5,
-    frequency: 60,
 }

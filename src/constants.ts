@@ -21,6 +21,13 @@ export const BASKET_EFFECTS: Readonly<{ [key: string]: number }> = {
     MOVE_Y: 3,
 }
 
+export const SOUND_EFFECTS: Readonly<{ [key: string]: number }> = {
+    NONE: -1,
+    ROTATE: 1,
+    MOVE_X: 2,
+    MOVE_Y: 3,
+}
+
 export const COLLISION_EVENTS: Readonly<{ [key: string]: number }> = {
     WALL: 0,
     LOWER_BOUND: 1,

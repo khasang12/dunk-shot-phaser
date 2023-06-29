@@ -25,6 +25,7 @@ export default class Basket extends BodyObject {
     private tweensX: Phaser.Tweens.Tween
     private tweensY: Phaser.Tweens.Tween
     private tweensAngle: Phaser.Tweens.Tween
+    private newY: number
 
     constructor(o: IGameObject) {
         super(o)
@@ -150,18 +151,16 @@ export default class Basket extends BodyObject {
 
     public onTransitEnter(data: number[]) {
         const [_W, H] = [CANVAS_WIDTH, CANVAS_HEIGHT]
-        const [state, effect] = data
+        const [state, effect, curHeight] = data
         if (state == 0) this.transition(this, this.x, this.y, false, effect)
         else {
-            const newY = this.y - randomIntegerInRange(H / 2, H - 200)
-            this.transition(this, this.x, newY, true, effect)
-            this.y = newY
+            this.newY = curHeight - randomIntegerInRange(H / 4, H / 3)
+            this.transition(this, this.x, this.newY, true, effect)
         }
     }
 
     public onIdleEnter() {
         this.clearEffect()
-        //this.setScale(this.scaleX, this.scaleX)
         this.scene.tweens.add({
             targets: this,
             scaleY: this.scaleX,
@@ -198,7 +197,7 @@ export default class Basket extends BodyObject {
             this.transition(
                 obj,
                 this.x + getProjectX(80, Math.PI / 2 - this.rotation),
-                this.y - getProjectY(80, Math.PI / 2 - this.rotation),
+                this.newY - getProjectY(80, Math.PI / 2 - this.rotation),
                 false
             )
             obj.setAlpha(1)
