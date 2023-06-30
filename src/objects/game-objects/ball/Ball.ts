@@ -69,8 +69,13 @@ export default class Ball extends BodyObject implements IObserver {
             if (score && score % 5 == 0 && score > 0 && this.powerUp == false) {
                 this.powerUp = true
             }
-            this.setX(x)
-            this.setY(y)
+            this.scene.tweens.add({
+                targets: this,
+                x: x,
+                y: y,
+                duration: 100,
+                ease: 'Sine.easeInOut',
+            })
             this.setVelocity(0, 0)
             this.disableBody(true, false)
             this.isMoving = false

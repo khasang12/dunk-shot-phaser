@@ -154,6 +154,7 @@ export default class Basket extends BodyObject {
         const [state, effect, curHeight] = data
         if (state == 0) this.transition(this, this.x, this.y, false, effect)
         else {
+            this.y = curHeight - H
             this.newY = curHeight - randomIntegerInRange(H / 4, H / 3)
             this.transition(this, this.x, this.newY, true, effect)
         }
@@ -205,7 +206,13 @@ export default class Basket extends BodyObject {
     }
 
     public reset() {
-        this.angle = 0
+        this.scene.tweens.add({
+            targets: this,
+            angle: 0,
+            duration: 500,
+            ease: 'Power2',
+        })
+        //this.angle = 0
     }
 
     public vibrateX() {

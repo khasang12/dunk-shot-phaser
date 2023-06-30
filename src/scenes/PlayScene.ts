@@ -337,6 +337,7 @@ export default class PlayScene extends Phaser.Scene implements IObserver {
         this.soundManager.playSound('over')
         const curScore = gameManager.getScoreManager().getCurScore()
         if (curScore == 0) {
+            this.ball.setPosition(this.basketCtrl.getCur().x, this.basketCtrl.getCur().y - 20)
             this.ball.stateMachine.setState(
                 'idle',
                 this.basketCtrl.getCur().x,

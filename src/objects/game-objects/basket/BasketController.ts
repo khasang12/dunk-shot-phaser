@@ -27,7 +27,7 @@ export default class BasketController implements IObserver {
         const temp = this.curBasket
         this.curBasket = this.nextBasket
         this.nextBasket = temp
-        this.curBasket.rotation = 0
+        this.curBasket.reset()
     }
     public onNotify(e: number): void {
         const curScore = gameManager.getScoreManager().getCurScore()
