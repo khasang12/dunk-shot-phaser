@@ -246,7 +246,7 @@ export default class PlayScene extends Phaser.Scene implements IObserver {
     }
 
     private onPointerUp(_pointer: Phaser.Input.Pointer) {
-        if (this.inputManager.isDragging()) {
+        if (this.inputManager.isDragging() && !this.ball.isFlying()) {
             this.basketCtrl.getCur().stateMachine.setState('idle')
             this.ball.stateMachine.setState(
                 'fly',
@@ -259,7 +259,7 @@ export default class PlayScene extends Phaser.Scene implements IObserver {
     }
 
     private onPointerMove(pointer: Phaser.Input.Pointer) {
-        if (pointer.isDown && this.inputManager.isDragging()) {
+        if (pointer.isDown && this.inputManager.isDragging() && !this.ball.isFlying()) {
             const [velocity, angle] = this.inputManager.estimateVelocityAndAngle(pointer)
             this.basketCtrl.getCur().stateMachine.setState('snipe', velocity, angle)
             this.ball.stateMachine.setState(

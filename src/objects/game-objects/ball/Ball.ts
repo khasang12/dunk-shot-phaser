@@ -160,6 +160,10 @@ export default class Ball extends BodyObject implements IObserver {
         this.powerUp = false
     }
 
+    public isFlying() {
+        return this.isMoving
+    }
+
     public isFlyingDown() {
         return (this.body?.velocity.y || 0) > 0
     }

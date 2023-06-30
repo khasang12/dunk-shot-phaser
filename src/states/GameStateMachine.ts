@@ -16,7 +16,7 @@ export default class GameStateMachine {
         this.changeStateQueue = []
     }
 
-    addState(
+    public addState(
         name: string,
         config?: {
             onEnter?: (arg: Phaser.Scene, msg?: Object) => void
@@ -37,7 +37,7 @@ export default class GameStateMachine {
         return this
     }
 
-    setState(name: string, args: Phaser.Scene, msg?: Object) {
+    public setState(name: string, args: Phaser.Scene, msg?: Object) {
         // switch to State called `name`
         if (!this.states.has(name)) {
             console.warn(`Tried to change to unknown state: ${name}`)
@@ -72,7 +72,7 @@ export default class GameStateMachine {
         this.isChangingState = false
     }
 
-    isCurrentState(name: string) {
+    public isCurrentState(name: string) {
         if (!this.currentState) {
             return false
         }
@@ -80,7 +80,7 @@ export default class GameStateMachine {
         return this.currentState.name === name
     }
 
-    update(dt: number, arg: Phaser.Scene) {
+    public update(dt: number, arg: Phaser.Scene) {
         // update current state if exists
         if (this.changeStateQueue.length > 0) {
             this.setState(<string>this.changeStateQueue.shift(), arg)
