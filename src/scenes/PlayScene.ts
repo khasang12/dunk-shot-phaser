@@ -30,7 +30,6 @@ export default class PlayScene extends Phaser.Scene implements IObserver {
     private perfectText: Text
     private flagText: Text
     private fps: FpsText
-    private flagTweens: Phaser.Tweens.Tween
 
     // GameObjects
     private lineGroupBounds: Phaser.Physics.Arcade.Group
@@ -144,7 +143,7 @@ export default class PlayScene extends Phaser.Scene implements IObserver {
             repeat: -1,
         })
         this.flag = this.add.sprite(CANVAS_WIDTH, -130, 'flags')
-        this.flag.play('flags').setScale(5).setAngle(0).setAlpha(0)
+        this.flag.play('flags').setScale(4).setAngle(270).setAlpha(0)
     }
 
     private createWall() {
@@ -209,6 +208,7 @@ export default class PlayScene extends Phaser.Scene implements IObserver {
         }).setDepth(1)
 
         if (data) this.ball.setTexture(data.skin)
+        this.physics.world.setFPS(60)
     }
 
     private subscribe() {
@@ -242,7 +242,7 @@ export default class PlayScene extends Phaser.Scene implements IObserver {
         this.createObjects(data)
         this.createWall()
         this.subscribe()
-        this.cameras.main.startFollow(this.ball, false, 0, 1, -240, 240)
+        this.cameras.main.startFollow(this.ball, false, 0, 0.1, -240, 240)
     }
 
     private onPointerUp(_pointer: Phaser.Input.Pointer) {
@@ -270,8 +270,7 @@ export default class PlayScene extends Phaser.Scene implements IObserver {
         }
     }
 
-    public update(dt: number) {
-        console.log(this.cameras.main.scrollY);
+    public update(time: number, dt: number) {
         this.ball.update(dt)
         this.updateBackground()
 
@@ -307,7 +306,7 @@ export default class PlayScene extends Phaser.Scene implements IObserver {
         this.fps.setY(this.cameras.main.scrollY + 50)
         this.starImg.setY(this.cameras.main.scrollY + 50)
         this.scoreText.setY(this.cameras.main.scrollY + 50)
-        //this.flag.setY(this.cameras.main.scrollY + CANVAS_WIDTH)
+        this.flag.setY(this.cameras.main.scrollY + CANVAS_WIDTH)
         this.lineGroupBounds.setY(this.cameras.main.scrollY)
         this.curScoreText.setY(this.cameras.main.scrollY + CANVAS_WIDTH / 2)
         this.wallImg.setY(this.cameras.main.scrollY + CANVAS_HEIGHT / 2)
@@ -336,6 +335,17 @@ export default class PlayScene extends Phaser.Scene implements IObserver {
 
     private onHitLowerBound() {
         this.soundManager.playSound('over')
+        const curScore = gameManager.getScoreManager().getCurScore()
+        if (curScore == 0) {
+            this.ball.stateMachine.setState(
+                'idle',
+                this.basketCtrl.getCur().x,
+                this.basketCtrl.getCur().y
+            )
+            if (this.flag.alpha == 1) this.flag.setAlpha(0)
+            return
+        }
+
         gameManager.getScoreManager().saveScoreToLocalStorage()
         this.firebase.addHighScore(
             this.firebase.getUser() ? this.firebase.getUser().displayName : 'test',
@@ -344,19 +354,12 @@ export default class PlayScene extends Phaser.Scene implements IObserver {
         this.scene.start('GameOverScene', {
             data: gameManager.getScoreManager().getCurScore(),
         })
-        if (this.flag) this.flag.destroy()
+        if (this.flag.alpha == 1) this.flag.setAlpha(0)
     }
 
     private onHitUpperBound() {
-        if (!this.flagTweens || !this.flagTweens.isActive()) {
-            this.flagTweens = this.tweens.add({
-                targets: this.flag,
-                alpha: 1,
-                angle: 270,
-                ease: 'Linear',
-                duration: 1200,
-            })
-        }
+        console.log(123)
+        this.flag.setAlpha(1)
     }
 
     private onHitCurrent() {
@@ -423,6 +426,7 @@ export default class PlayScene extends Phaser.Scene implements IObserver {
                 this.basketCtrl.getCur().moveFollower(this.ball)
                 this.star.stateMachine.setState('enable')
             })
+            if (this.flag.alpha == 1) this.flag.setAlpha(0)
         }
     }
 }

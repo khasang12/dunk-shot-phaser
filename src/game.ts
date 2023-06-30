@@ -35,6 +35,11 @@ export const config = {
         default: 'arcade',
         arcade: {
             debug: false,
+            fps: 60,
+        },
+        fps: {
+            target: 60,
+            forceSetTimeOut: true,
         },
     },
     plugins: {
