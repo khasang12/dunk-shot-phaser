@@ -454,8 +454,8 @@
                  "type":"basket",
                  "visible":true,
                  "width":140,
-                 "x":352.666666666667,
-                 "y":328.833333333333
+                 "x":360.333333333334,
+                 "y":394.5
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -464,7 +464,7 @@
          "y":0
         }],
  "nextlayerid":5,
- "nextobjectid":26,
+ "nextobjectid":28,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.1",
@@ -517,6 +517,18 @@
                          "tileid":187
                         }],
                  "id":186
+                }, 
+                {
+                 "animation":[
+                        {
+                         "duration":500,
+                         "tileid":403
+                        }, 
+                        {
+                         "duration":500,
+                         "tileid":506
+                        }],
+                 "id":403
                 }, 
                 {
                  "animation":[

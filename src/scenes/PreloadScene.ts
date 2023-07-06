@@ -185,5 +185,6 @@ export default class PreloadScene extends Phaser.Scene {
         this.load.tilemapTiledJSON('level2', 'assets/maps/bounce2.json')
         this.load.tilemapTiledJSON('level3', 'assets/maps/bounce3.json')
         this.load.image('tiles', 'assets/tiles/tiles.png')
+        this.load.scenePlugin('AnimatedTiles', 'AnimatedTiles.js', 'animatedTiles', 'animatedTiles')
     }
 }

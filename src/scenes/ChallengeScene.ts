@@ -12,6 +12,7 @@ import Image from '../objects/images/Image'
 import FpsText from '../objects/texts/FpsText'
 import { Text } from '../objects/texts/Text'
 import IObserver from '../types/observer'
+import { AnimatedTiles } from '../plugins/AnimatedTiles'
 
 type SceneParam = {
     skin: string
@@ -42,6 +43,7 @@ export default class ChallengeScene extends Phaser.Scene implements IObserver {
     private eventManager: EventManager
     private inputManager: InputManager
     private soundManager: SoundManager
+    private animatedTiles!: AnimatedTiles
 
     constructor() {
         super({ key: 'ChallengeScene' })
@@ -58,6 +60,8 @@ export default class ChallengeScene extends Phaser.Scene implements IObserver {
         )
         this.background.setName('background')
 
+        // Init animations on map
+        this.animatedTiles.init(this.map)
         /* this.foreground = <Phaser.Tilemaps.TilemapLayer>(
             this.map.createLayer('foreground', this.tileset, 0, 0)
         )
@@ -173,7 +177,7 @@ export default class ChallengeScene extends Phaser.Scene implements IObserver {
                         scene: this,
                         x: object.x,
                         y: object.y,
-                        key: 'ball_8',
+                        key: 'ball_2',
                     }).setName(object.name)
                 )
             }
@@ -255,6 +259,11 @@ export default class ChallengeScene extends Phaser.Scene implements IObserver {
     }
 
     public update(time: number, dt: number) {
+        if (!this.sys.isActive()) {
+            console.log('not active yet')
+            return
+        }
+
         this.ball.update(dt)
         this.updateBackground()
 
@@ -277,6 +286,8 @@ export default class ChallengeScene extends Phaser.Scene implements IObserver {
         if (this.ball.isOutOfBounds()) {
             this.eventManager.notify(COLLISION_EVENTS['WALL'])
         }
+
+        this.animatedTiles.updateAnimatedTiles()
     }
 
     private updateBackground() {

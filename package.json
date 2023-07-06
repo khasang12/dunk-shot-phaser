@@ -57,6 +57,7 @@
     "firebase": "^9.23.0",
     "gh-pages": "^5.0.0",
     "phaser": "^3.60.0",
+    "phaser-animated-tiles": "^2.0.2",
     "regenerator-runtime": "^0.13.11"
   }
 }
