@@ -30,6 +30,8 @@ export default class Basket extends BodyObject {
     constructor(o: IGameObject) {
         super(o)
 
+        this.setOrigin(0.5, 0.5)
+
         this.createMultiBody()
         this.scene.physics.add.existing(this)
 
@@ -88,6 +90,13 @@ export default class Basket extends BodyObject {
         this.bodyGroup.addMultiple(this.bodyRects)
         this.edgeGroup.addMultiple(this.edgeRects)
         this.openGroup.addMultiple(this.openRects)
+    }
+
+    public updateBody() {
+        this.enableBody(false)
+        this.updateBodyGroup()
+        this.updateEdgeGroup()
+        this.updateOpenGroup()
     }
 
     private updateBodyGroup() {

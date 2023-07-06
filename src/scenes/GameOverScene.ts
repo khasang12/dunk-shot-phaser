@@ -42,7 +42,7 @@ export default class GameOverScene extends Phaser.Scene {
             x: CANVAS_WIDTH / 2,
             y: 620,
             msg: 'Fetching...',
-            style: { fontFamily: 'MilkyHoney', fontSize: '35px', color: '#e2224c' },
+            style: { fontSize: '35px', color: '#e2224c' },
         }).setDepth(10)
 
         const star = new Image({

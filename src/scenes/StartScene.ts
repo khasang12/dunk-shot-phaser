@@ -144,12 +144,13 @@ export default class StartScene extends Phaser.Scene {
             text: '',
             scale: 0.3 * 1.5,
             callback: () => {
+                this.registry.set('level', 'level1')
                 if (data.skin)
-                    gameManager.getSceneManager().stateMachine.setState('play', this, data)
+                    gameManager.getSceneManager().stateMachine.setState('challenge', this, data)
                 else
                     gameManager
                         .getSceneManager()
-                        .stateMachine.setState('play', this, { skin: 'ball' })
+                        .stateMachine.setState('challenge', this, { skin: 'ball' })
             },
         })
     }
