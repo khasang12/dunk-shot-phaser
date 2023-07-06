@@ -16,7 +16,7 @@ export default class StateMachine {
         this.changeStateQueue = []
     }
 
-    addState(
+    public addState(
         name: string,
         config?: {
             onEnter?: (args: any[]) => void
@@ -37,7 +37,7 @@ export default class StateMachine {
         return this
     }
 
-    setState(name: string, ...args: any[]) {
+    public setState(name: string, ...args: number[]) {
         // switch to State called `name`
         if (!this.states.has(name)) {
             console.warn(`Tried to change to unknown state: ${name}`)
@@ -75,7 +75,7 @@ export default class StateMachine {
         this.isChangingState = false
     }
 
-    isCurrentState(name: string) {
+    public isCurrentState(name: string) {
         if (!this.currentState) {
             return false
         }
@@ -83,7 +83,7 @@ export default class StateMachine {
         return this.currentState.name === name
     }
 
-    update(dt: number) {
+    public update(dt: number) {
         // update current state if exists
         if (this.changeStateQueue.length > 0) {
             this.setState(<string>this.changeStateQueue.shift())

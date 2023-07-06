@@ -12,6 +12,9 @@ export default class PreloadScene extends Phaser.Scene {
         // Loading Indicator
         this.showProgress()
 
+        // Maps
+        this.preloadMaps()
+
         // Images
         this.preloadButtons()
         this.preloadBalls()
@@ -175,5 +178,12 @@ export default class PreloadScene extends Phaser.Scene {
         this.load.audio('game-over', 'GameOver.wav')
         this.load.audio('net', 'Net.wav')
         this.load.audio('shoot', 'Shoot.mp3')
+    }
+
+    private preloadMaps(): void {
+        this.load.tilemapTiledJSON('level1', 'assets/maps/bounce.json')
+        this.load.tilemapTiledJSON('level2', 'assets/maps/bounce2.json')
+        this.load.tilemapTiledJSON('level3', 'assets/maps/bounce3.json')
+        this.load.image('tiles', 'assets/tiles/tiles.png')
     }
 }

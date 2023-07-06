@@ -32,6 +32,9 @@ export default class SceneManager {
             .addState('customize', {
                 onEnter: this.onCustomizeEnter,
             })
+            .addState('challenge', {
+                onEnter: this.onChallengeEnter,
+            })
     }
 
     public static getInstance(): SceneManager {
@@ -47,6 +50,10 @@ export default class SceneManager {
 
     public onPlayEnter(scene: Phaser.Scene, msg?: Object) {
         scene.scene.start(SCENE_KEYS['PLAY'], msg)
+    }
+
+    public onChallengeEnter(scene: Phaser.Scene, msg?: Object) {
+        scene.scene.start(SCENE_KEYS['CHALLENGE'], msg)
     }
 
     public onCustomizeEnter(scene: Phaser.Scene) {

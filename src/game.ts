@@ -9,6 +9,7 @@ import SettingScene from './scenes/SettingScene'
 import CustomizeScene from './scenes/CustomizeScene'
 import GameManager from './manager/GameManager'
 import FirebasePlugin from './plugins/FirebasePlugin'
+import ChallengeScene from './scenes/ChallengeScene'
 
 export const config = {
     type: Phaser.AUTO,
@@ -30,11 +31,17 @@ export const config = {
         GameOverScene,
         SettingScene,
         CustomizeScene,
+        ChallengeScene
     ],
     physics: {
         default: 'arcade',
         arcade: {
-            debug: false,
+            debug: true,
+            fps: 60,
+        },
+        fps: {
+            target: 60,
+            forceSetTimeOut: true,
         },
     },
     plugins: {

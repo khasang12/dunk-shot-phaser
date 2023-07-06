@@ -12,6 +12,7 @@ export const SCENE_KEYS: Readonly<{ [key: string]: string }> = {
     LOAD: 'PreloadScene',
     START: 'StartScene',
     SETTING: 'SettingScene',
+    CHALLENGE: 'ChallengeScene',
 }
 
 export const BASKET_EFFECTS: Readonly<{ [key: string]: number }> = {

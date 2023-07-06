@@ -34,6 +34,7 @@ export default class Ball extends BodyObject implements IObserver {
         this.setBounce(0.75, 0.75)
         this.setVisible(true)
         this.setGravityY(980)
+        this.setOrigin(0.5, 0.5)
         this.setCollideWorldBounds(false, 1, 1, true)
 
         this.scene.add.existing(this)
@@ -69,8 +70,13 @@ export default class Ball extends BodyObject implements IObserver {
             if (score && score % 5 == 0 && score > 0 && this.powerUp == false) {
                 this.powerUp = true
             }
-            this.setX(x)
-            this.setY(y)
+            this.scene.tweens.add({
+                targets: this,
+                x: x,
+                y: y,
+                duration: 100,
+                ease: 'Sine.easeInOut',
+            })
             this.setVelocity(0, 0)
             this.disableBody(true, false)
             this.isMoving = false
@@ -158,6 +164,10 @@ export default class Ball extends BodyObject implements IObserver {
 
     public disablePowerUp() {
         this.powerUp = false
+    }
+
+    public isFlying() {
+        return this.isMoving
     }
 
     public isFlyingDown() {
