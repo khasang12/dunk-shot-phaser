@@ -36,4 +36,7 @@ export const COLLISION_EVENTS: Readonly<{ [key: string]: number }> = {
     OBSTACLE: 3,
     CURRENT_BASKET: 4,
     NEXT_BASKET: 5,
+    MID_BASKET: 6,
+    NEXT_CHALLENGE_BASKET: 7,
+    OBSTACLE_MID: 8,
 }

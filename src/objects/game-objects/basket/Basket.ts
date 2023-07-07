@@ -74,8 +74,8 @@ export default class Basket extends BodyObject {
         ]
 
         this.openRects = [
-            this.scene.add.rectangle(this.x - 25, this.y - 25, 20, 35),
-            this.scene.add.rectangle(this.x + 25, this.y - 25, 20, 35),
+            this.scene.add.rectangle(this.x - 25, this.y - 25, 30, 35),
+            this.scene.add.rectangle(this.x + 25, this.y - 25, 30, 35),
         ]
 
         this.bodyGroup = this.scene.physics.add.group(config)

@@ -9,6 +9,9 @@
     ],
     "file.lastUsedOpenFilter": "All Files (*)",
     "fileStates": {
+        "": {
+            "scaleInEditor": 3
+        },
         ":/automap-tiles.tsx": {
             "scaleInDock": 1,
             "scaleInEditor": 1
@@ -21,15 +24,16 @@
             "expandedObjectLayers": [
                 3
             ],
-            "scale": 0.75,
-            "selectedLayer": 0,
+            "scale": 1.5,
+            "selectedLayer": 2,
             "viewCenter": {
-                "x": 54.66666666666663,
-                "y": 423.33333333333326
+                "x": 487.99999999999994,
+                "y": 815.6666666666666
             }
         },
         "bounce.json#tiles": {
-            "scaleInDock": 3
+            "scaleInDock": 3,
+            "scaleInEditor": 4
         },
         "bounce.tmx": {
             "expandedObjectLayers": [
@@ -46,29 +50,30 @@
             "expandedObjectLayers": [
                 3
             ],
-            "scale": 0.75,
+            "scale": 1.5,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 389.33333333333326,
-                "y": 181.99999999999994
+                "x": 356.66666666666663,
+                "y": 878.3333333333333
             }
         },
         "bounce2.json#tiles": {
-            "scaleInDock": 1
+            "scaleInDock": 1,
+            "scaleInEditor": 2
         },
         "bounce3.json": {
             "expandedObjectLayers": [
                 3
             ],
-            "scale": 0.75,
-            "selectedLayer": 0,
+            "scale": 1.5,
+            "selectedLayer": 2,
             "viewCenter": {
-                "x": 363.99999999999994,
-                "y": 619.3333333333333
+                "x": 316.66666666666663,
+                "y": 818.9999999999999
             }
         },
         "bounce3.json#tiles": {
-            "scaleInDock": 1
+            "scaleInDock": 3
         },
         "grass_rules.tmx": {
             "scale": 2,
@@ -111,10 +116,10 @@
     ],
     "project": "dunk-shot.tiled-project",
     "recentFiles": [
-        ":/automap-tiles.tsx",
         "bounce.json",
         "bounce2.json",
         "bounce3.json",
+        ":/automap-tiles.tsx",
         "tiles.tsx",
         "bounce.tmx",
         "grass_rules.tmx",

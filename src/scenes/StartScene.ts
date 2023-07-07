@@ -139,7 +139,7 @@ export default class StartScene extends Phaser.Scene {
         const challengeBtn = new Button({
             scene: this,
             x: CANVAS_WIDTH - 190,
-            y: CANVAS_HEIGHT - 60,
+            y: CANVAS_HEIGHT - 80,
             key: 'challenge',
             text: '',
             scale: 0.3 * 1.5,
