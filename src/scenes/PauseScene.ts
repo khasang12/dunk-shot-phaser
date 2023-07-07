@@ -4,12 +4,15 @@ import ClickableImage from '../objects/images/ClickableImage'
 import Image from '../objects/images/Image'
 import { Text } from '../objects/texts/Text'
 
+type SceneParam = {
+    data: string
+}
 export default class PauseScene extends Phaser.Scene {
     constructor() {
         super({ key: 'PauseScene' })
     }
 
-    public create() {
+    public create(data: SceneParam) {
         const settingsImg = new ClickableImage({
             scene: this,
             x: 80,
@@ -74,7 +77,7 @@ export default class PauseScene extends Phaser.Scene {
             y: CANVAS_HEIGHT / 2 + 200,
             key: 'resume',
             callback: () => {
-                gameManager.getSceneManager().stateMachine.setState('resume', this)
+                gameManager.getSceneManager().stateMachine.setState('resume', this, data.data)
             },
             scale: 0.36,
         })

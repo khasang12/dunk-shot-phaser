@@ -9,9 +9,9 @@ import Basket from '../objects/game-objects/basket/Basket'
 import BasketController from '../objects/game-objects/basket/BasketController'
 import ClickableImage from '../objects/images/ClickableImage'
 import Image from '../objects/images/Image'
-import FpsText from '../objects/texts/FpsText'
 import { Text } from '../objects/texts/Text'
 import IObserver from '../types/observer'
+import { AnimatedTiles } from '../plugins/AnimatedTiles'
 
 type SceneParam = {
     skin: string
@@ -30,18 +30,20 @@ export default class ChallengeScene extends Phaser.Scene implements IObserver {
     private incScoreText: Text
     private levelText: Text
     private bounceText: Text
-    private fps: FpsText
 
     // GameObjects
     private ball: Ball
     private bouncingBalls: Phaser.GameObjects.Group
 
     // Game Control Variables
+    private latestBounceCnt: number
+    private curScore: number
     private nextLevel: string
     private basketCtrl: BasketController
     private eventManager: EventManager
     private inputManager: InputManager
     private soundManager: SoundManager
+    private animatedTiles!: AnimatedTiles
 
     constructor() {
         super({ key: 'ChallengeScene' })
@@ -58,17 +60,12 @@ export default class ChallengeScene extends Phaser.Scene implements IObserver {
         )
         this.background.setName('background')
 
-        /* this.foreground = <Phaser.Tilemaps.TilemapLayer>(
-            this.map.createLayer('foreground', this.tileset, 0, 0)
-        )
-        this.foreground.setName('foreground')
-        this.foreground.setCollisionByProperty({ collide: true }) */
+        // Init animations on map
+        this.animatedTiles.init(this.map)
     }
 
     private createAssets() {
         const [W, H] = [CANVAS_WIDTH, CANVAS_HEIGHT]
-
-        this.fps = new FpsText(this)
 
         this.pauseImg = new ClickableImage({
             scene: this,
@@ -83,7 +80,7 @@ export default class ChallengeScene extends Phaser.Scene implements IObserver {
 
         this.levelText = new Text({
             scene: this,
-            x: W - 100,
+            x: W / 2,
             y: 50,
             msg: '0',
             style: {
@@ -94,28 +91,20 @@ export default class ChallengeScene extends Phaser.Scene implements IObserver {
             },
         }).setDepth(1)
 
-        /*         this.curScoreText = new Text({
+        this.curScoreText = new Text({
             scene: this,
             x: W / 2,
             y: H / 2 - 120,
-            msg: gameManager.getScoreManager().getCurScore().toString(),
-            style: { fontSize: '150px', color: '#ababab', fontStyle: 'bold' },
-        }) */
+            msg: '0',
+            style: { fontSize: '100px', color: '#b31312', fontStyle: 'bold' },
+        })
 
         this.bounceText = new Text({
             scene: this,
-            x: -100,
-            y: -100,
+            x: -200,
+            y: -200,
             msg: 'PERFECT !!',
-            style: { fontSize: '30px', color: '#ffa500', fontStyle: 'bold' },
-        })
-
-        this.incScoreText = new Text({
-            scene: this,
-            x: -100,
-            y: -100,
-            msg: '+1',
-            style: { fontSize: '50px', color: 'red', fontStyle: 'bold' },
+            style: { fontSize: '40px', color: '#5021FD', fontStyle: 'bold' },
         })
     }
 
@@ -128,11 +117,11 @@ export default class ChallengeScene extends Phaser.Scene implements IObserver {
             scene: this,
             x: CANVAS_WIDTH / 2,
             y: CANVAS_HEIGHT / 2 + 300,
-            key: 'basket',
+            key: 'tree-basket',
             callback: (x: number, y: number, angle: number, speed: number) => {
                 this.ball.stateMachine.setState('fly', x, y, angle, speed)
             },
-            scale: 0.65,
+            scale: 0.5,
         })
             .setDepth(2)
             .setMaxVelocity(0, 0)
@@ -141,17 +130,31 @@ export default class ChallengeScene extends Phaser.Scene implements IObserver {
             scene: this,
             x: CANVAS_WIDTH - 140,
             y: CANVAS_HEIGHT / 2 - 200,
-            key: 'basket',
+            key: 'gold-basket',
             callback: (x: number, y: number, angle: number, speed: number) => {
                 this.ball.stateMachine.setState('fly', x, y, angle, speed)
             },
-            scale: 0.65,
+            scale: 0.5,
+        })
+            .setDepth(2)
+            .setMaxVelocity(0, 0)
+
+        const midBasket = new Basket({
+            scene: this,
+            x: CANVAS_WIDTH - 140,
+            y: CANVAS_HEIGHT / 2 - 200,
+            key: 'tree-basket',
+            callback: (x: number, y: number, angle: number, speed: number) => {
+                this.ball.stateMachine.setState('fly', x, y, angle, speed)
+            },
+            scale: 0.5,
         })
             .setDepth(2)
             .setMaxVelocity(0, 0)
 
         this.basketCtrl.setCur(curBasket)
         this.basketCtrl.setNext(nextBasket)
+        this.basketCtrl.setMid(midBasket)
 
         this.ball = new Ball({
             scene: this,
@@ -173,7 +176,7 @@ export default class ChallengeScene extends Phaser.Scene implements IObserver {
                         scene: this,
                         x: object.x,
                         y: object.y,
-                        key: 'ball_8',
+                        key: 'bouncer',
                     }).setName(object.name)
                 )
             }
@@ -185,6 +188,9 @@ export default class ChallengeScene extends Phaser.Scene implements IObserver {
                 if (object.name === 'curBasket') {
                     this.basketCtrl.getCur().setPosition(object.x, object.y)
                     this.basketCtrl.getCur().updateBody()
+                } else if (object.name === 'midBasket') {
+                    this.basketCtrl.getMid().setPosition(object.x, object.y)
+                    this.basketCtrl.getMid().updateBody()
                 } else {
                     this.basketCtrl.getNext().setPosition(object.x, object.y)
                     this.basketCtrl.getNext().updateBody()
@@ -205,13 +211,17 @@ export default class ChallengeScene extends Phaser.Scene implements IObserver {
         this.physics.add.collider(this.ball, this.foreground)
         this.physics.add.collider(this.ball, this.bouncingBalls, (_ball, boun) => {
             const bounce = boun as StaticBall
-            if (!bounce.getIsVibrating()) bounce.vibrate()
+            if (!bounce.getIsVibrating()) {
+                this.latestBounceCnt += 1
+                bounce.vibrate()
+            }
         })
     }
 
     public create(data: SceneParam) {
         // Reset Vars
-        gameManager.getScoreManager().reset()
+        this.latestBounceCnt = 0
+        this.curScore = 0
         this.eventManager = new EventManager()
         this.inputManager = InputManager.getInstance()
         this.soundManager = SoundManager.getInstance()
@@ -226,7 +236,12 @@ export default class ChallengeScene extends Phaser.Scene implements IObserver {
         this.createAssets()
         this.subscribe()
         this.cameras.main.startFollow(this.ball, false, 0, 0.1, 20, 450)
-        this.levelText.setText(this.registry.get('level').toUpperCase())
+
+        this.levelText.setText(
+            this.registry.get('level').toUpperCase() +
+                '- Best Bounce: ' +
+                (localStorage.getItem(this.registry.get('level')) || '0')
+        )
     }
 
     private onPointerUp(_pointer: Phaser.Input.Pointer) {
@@ -255,6 +270,11 @@ export default class ChallengeScene extends Phaser.Scene implements IObserver {
     }
 
     public update(time: number, dt: number) {
+        if (!this.sys.isActive()) {
+            console.log('not active yet')
+            return
+        }
+
         this.ball.update(dt)
         this.updateBackground()
 
@@ -268,22 +288,30 @@ export default class ChallengeScene extends Phaser.Scene implements IObserver {
         )
             this.eventManager.notify(COLLISION_EVENTS['CURRENT_BASKET'])
         if (
+            this.physics.overlap(this.ball, this.basketCtrl.getMid().openGroup) &&
+            this.physics.overlap(this.ball, this.basketCtrl.getMid().bodyGroup)
+        )
+            this.eventManager.notify(COLLISION_EVENTS['MID_BASKET'])
+        if (
             this.physics.overlap(this.ball, this.basketCtrl.getNext().openGroup) &&
             this.physics.overlap(this.ball, this.basketCtrl.getNext().bodyGroup)
         )
-            this.eventManager.notify(COLLISION_EVENTS['NEXT_BASKET'])
+            this.eventManager.notify(COLLISION_EVENTS['NEXT_CHALLENGE_BASKET'])
         if (this.physics.collide(this.ball, this.basketCtrl.getNext().bodyGroup))
             this.eventManager.notify(COLLISION_EVENTS['OBSTACLE'])
+        if (this.physics.collide(this.ball, this.basketCtrl.getMid().bodyGroup))
+            this.eventManager.notify(COLLISION_EVENTS['OBSTACLE_MID'])
         if (this.ball.isOutOfBounds()) {
             this.eventManager.notify(COLLISION_EVENTS['WALL'])
         }
+
+        this.animatedTiles.updateAnimatedTiles()
     }
 
     private updateBackground() {
         const cameraY = this.cameras.main.scrollY
-        this.fps.update()
+        this.curScoreText.setY(cameraY + 170)
         this.pauseImg.setY(cameraY + 50)
-        this.fps.setY(cameraY + 50)
         this.levelText.setY(cameraY + 50)
         this.background.setY(cameraY - 30)
     }
@@ -296,13 +324,17 @@ export default class ChallengeScene extends Phaser.Scene implements IObserver {
             case COLLISION_EVENTS['CURRENT_BASKET']:
                 this.onHitCurrent()
                 break
-            case COLLISION_EVENTS['NEXT_BASKET']:
+            case COLLISION_EVENTS['MID_BASKET']:
+                this.onHitMid()
+                break
+            case COLLISION_EVENTS['NEXT_CHALLENGE_BASKET']:
                 this.onHitNext()
                 break
         }
     }
 
     private onHitLowerBound() {
+        this.latestBounceCnt = 0
         this.soundManager.playSound('over')
         const curScore = gameManager.getScoreManager().getCurScore()
         if (curScore == 0) {
@@ -326,6 +358,7 @@ export default class ChallengeScene extends Phaser.Scene implements IObserver {
     }
 
     private onHitCurrent() {
+        this.latestBounceCnt = 0
         this.ball.stateMachine.setState(
             'idle',
             this.basketCtrl.getCur().x,
@@ -334,41 +367,58 @@ export default class ChallengeScene extends Phaser.Scene implements IObserver {
         this.soundManager.playSound('net')
     }
 
+    private onHitMid() {
+        this.bounceText.setText('BOUNCE\n  +' + this.latestBounceCnt.toString())
+        this.bounceText.emitTextFadeInOut(
+            this.basketCtrl.getMid().x,
+            this.basketCtrl.getMid().y - 100,
+            1000
+        )
+
+        this.ball.stateMachine.setState(
+            'idle',
+            this.basketCtrl.getMid().x,
+            this.basketCtrl.getMid().y
+        )
+        this.soundManager.playSound('net')
+
+        this.curScore += this.latestBounceCnt
+        console.log(this.curScore)
+        this.curScoreText.setText(this.curScore.toString())
+        this.latestBounceCnt = 0
+    }
+
     private onHitNext() {
         if (this.ball.body) {
-            let bonus = 0
-            const veloAngle = Math.atan2(this.ball.body?.velocity.y, this.ball.body?.velocity.x)
             this.soundManager.playSound('net')
-            bonus += 1
-            this.ball.stateMachine.setState(
-                'idle',
-                this.basketCtrl.getNext().x,
-                this.basketCtrl.getNext().y,
-                gameManager.getScoreManager().getCurScore()
-            )
-            if (this.basketCtrl.getNext().rotation - -veloAngle <= 0.15) {
-                bonus += 1
-                this.bounceText.emitTextFadeInOut(
-                    this.basketCtrl.getNext().x,
-                    this.basketCtrl.getNext().y - 140,
-                    1000
-                )
-            }
 
-            if (this.ball.isPowerUp()) bonus += 1
-            gameManager.getScoreManager().incrementScore(bonus)
-            this.incScoreText.setText('+' + bonus.toString())
-            this.incScoreText.emitTextFadeInOut(
+            this.bounceText.setText('BOUNCE\n  +' + this.latestBounceCnt.toString())
+            this.bounceText.emitTextFadeInOut(
                 this.basketCtrl.getNext().x,
-                this.basketCtrl.getNext().y - 65,
+                this.basketCtrl.getNext().y - 100,
                 1000
             )
 
-            if (this.nextLevel != '') {
-                this.registry.set('level', this.nextLevel)
-                this.nextLevel = ''
-                this.scene.restart()
-            } else gameManager.getSceneManager().stateMachine.setState('start', this)
+            this.curScore += this.latestBounceCnt
+            this.curScoreText.setText(this.curScore.toString())
+            this.latestBounceCnt = 0
+
+            this.ball.stateMachine.setState(
+                'idle',
+                this.basketCtrl.getNext().x,
+                this.basketCtrl.getNext().y
+            )
+
+            if (this.curScore > parseInt(localStorage.getItem(this.registry.get('level')) || '0'))
+                localStorage.setItem(this.registry.get('level'), this.curScore.toString())
+
+            this.time.delayedCall(1000, () => {
+                if (this.nextLevel != '') {
+                    this.registry.set('level', this.nextLevel)
+                    this.nextLevel = ''
+                    this.scene.restart()
+                } else gameManager.getSceneManager().stateMachine.setState('start', this)
+            })
         }
     }
 }

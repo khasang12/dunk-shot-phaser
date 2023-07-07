@@ -1,4 +1,4 @@
-export const CANVAS_WIDTH = 720
+export const CANVAS_WIDTH = 715
 export const CANVAS_HEIGHT = 1080
 export const LIGHT_BG = 'rgb(240, 240, 240)'
 export const DARK_BG = 'rgb(20, 24, 82)'
@@ -36,4 +36,7 @@ export const COLLISION_EVENTS: Readonly<{ [key: string]: number }> = {
     OBSTACLE: 3,
     CURRENT_BASKET: 4,
     NEXT_BASKET: 5,
+    MID_BASKET: 6,
+    NEXT_CHALLENGE_BASKET: 7,
+    OBSTACLE_MID: 8,
 }

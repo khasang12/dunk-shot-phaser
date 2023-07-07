@@ -10,6 +10,7 @@ import CustomizeScene from './scenes/CustomizeScene'
 import GameManager from './manager/GameManager'
 import FirebasePlugin from './plugins/FirebasePlugin'
 import ChallengeScene from './scenes/ChallengeScene'
+import { AnimatedTiles } from './plugins/AnimatedTiles'
 
 export const config = {
     type: Phaser.AUTO,
@@ -31,12 +32,12 @@ export const config = {
         GameOverScene,
         SettingScene,
         CustomizeScene,
-        ChallengeScene
+        ChallengeScene,
     ],
     physics: {
         default: 'arcade',
         arcade: {
-            debug: true,
+            debug: false,
             fps: 60,
         },
         fps: {
@@ -51,6 +52,14 @@ export const config = {
                 plugin: FirebasePlugin,
                 start: true,
                 mapping: 'firebase',
+            },
+        ],
+        scene: [
+            {
+                key: AnimatedTiles.key,
+                plugin: AnimatedTiles,
+                mapping: AnimatedTiles.mapping,
+                start: true,
             },
         ],
     },

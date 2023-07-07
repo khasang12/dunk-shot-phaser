@@ -11,7 +11,7 @@ export default class StaticBall extends StaticBodyObject implements IObserver {
         this.setOrigin(0.5, 0.5)
         this.setGravity(0, 0)
         this.body?.setCircle(this.width / 2 + 5)
-        this.setScale(0.15)
+        this.setScale(0.3)
         this.setImmovable(true)
         this.setPushable(false)
         this.scene.add.existing(this)

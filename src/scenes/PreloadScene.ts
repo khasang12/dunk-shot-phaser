@@ -144,6 +144,9 @@ export default class PreloadScene extends Phaser.Scene {
         this.load.image('hoop-down', 'hoop_1.png')
         this.load.image('hoop-up', 'hoop_2.png')
         this.load.image('basket', 'basket.png')
+        this.load.image('bouncer', 'bouncer.png')
+        this.load.image('gold-basket', 'golden_basket.png')
+        this.load.image('tree-basket', 'tree_basket.png')
         this.load.image('logo', 'logo.png')
         this.load.image('net', 'net.png')
         this.load.image('star', 'star.png')
@@ -185,5 +188,6 @@ export default class PreloadScene extends Phaser.Scene {
         this.load.tilemapTiledJSON('level2', 'assets/maps/bounce2.json')
         this.load.tilemapTiledJSON('level3', 'assets/maps/bounce3.json')
         this.load.image('tiles', 'assets/tiles/tiles.png')
+        this.load.scenePlugin('AnimatedTiles', 'AnimatedTiles.js', 'animatedTiles', 'animatedTiles')
     }
 }
