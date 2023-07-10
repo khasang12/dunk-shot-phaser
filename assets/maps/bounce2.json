@@ -194,8 +194,8 @@
                  "type":"basket",
                  "visible":true,
                  "width":140,
-                 "x":352,
-                 "y":400
+                 "x":360,
+                 "y":320
                 }, 
                 {
                  "ellipse":true,
@@ -434,8 +434,19 @@
                  "type":"shooting_ball",
                  "visible":true,
                  "width":62,
-                 "x":368.666666666666,
+                 "x":359.333333333333,
                  "y":991.833333333333
+                }, 
+                {
+                 "height":81,
+                 "id":25,
+                 "name":"midBasket",
+                 "rotation":0,
+                 "type":"basket",
+                 "visible":true,
+                 "width":140,
+                 "x":358,
+                 "y":668.833333333333
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -444,7 +455,7 @@
          "y":0
         }],
  "nextlayerid":5,
- "nextobjectid":25,
+ "nextobjectid":26,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.1",
